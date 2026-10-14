@@ -18,6 +18,8 @@ import 'dibujo.dart';
 ///   dibujo y no vuelve hasta que se borre lo pintado.
 /// - Cada dibujo guarda su paleta aparte, en el celular. Un dibujo sin pintar
 ///   empieza con la paleta completa, y uno ya pintado aparece como se dejó.
+/// - También recuerda si ya salió la celebración de ese dibujo (sale una
+///   sola vez, hasta que se borre lo pintado).
 class PaletaDibujo extends ChangeNotifier {
   PaletaDibujo._(this.id);
 
@@ -28,6 +30,8 @@ class PaletaDibujo extends ChangeNotifier {
 
   /// Colores que ya se acabaron en este dibujo.
   final Set<String> _acabados = <String>{};
+
+  bool _celebrado = false;
 
   static final Map<String, PaletaDibujo> _memoria = <String, PaletaDibujo>{};
   static final Set<PaletaDibujo> _sinGuardar = <PaletaDibujo>{};
@@ -94,7 +98,9 @@ class PaletaDibujo extends ChangeNotifier {
   /// Lo que le queda al tarrito del color: 1 = lleno, 0 = vacío.
   double nivel(String nombre) {
     if (acabado(nombre)) return 0;
-    return (1 - gasto(nombre) / Ajustes.limitePorColor).clamp(0.0, 1.0).toDouble();
+    return (1 - gasto(nombre) / Ajustes.limitePorColor)
+        .clamp(0.0, 1.0)
+        .toDouble();
   }
 
   /// Cuánto más del dibujo puede pintar el color (0 a 1).
@@ -104,7 +110,8 @@ class PaletaDibujo extends ChangeNotifier {
   }
 
   /// Los colores de [colores] que todavía no se acabaron.
-  List<ColorConNombre> disponibles(List<ColorConNombre> colores) => <ColorConNombre>[
+  List<ColorConNombre> disponibles(List<ColorConNombre> colores) =>
+      <ColorConNombre>[
         for (final c in colores)
           if (!acabado(c.nombre)) c,
       ];
@@ -137,6 +144,16 @@ class PaletaDibujo extends ChangeNotifier {
       notifyListeners();
     }
     return recienAcabados;
+  }
+
+  /// true si ya salió la celebración de este dibujo.
+  bool get celebrado => _celebrado;
+
+  /// Anota que ya salió la celebración (para que no se repita).
+  void marcarCelebrado() {
+    if (_celebrado) return;
+    _celebrado = true;
+    _marcarCambio();
   }
 
   // ------------------------------------------------- memoria y guardado
@@ -212,6 +229,7 @@ class PaletaDibujo extends ChangeNotifier {
   String _aTexto() => jsonEncode(<String, Object>{
         'gasto': _gasto,
         'acabados': _acabados.toList(),
+        if (_celebrado) 'celebrado': true,
       });
 
   void _leer(String texto) {
@@ -221,7 +239,8 @@ class PaletaDibujo extends ChangeNotifier {
       final gasto = datos['gasto'];
       if (gasto is Map) {
         gasto.forEach((nombre, valor) {
-          if (nombre is String && valor is num) _gasto[nombre] = valor.toDouble();
+          if (nombre is String && valor is num)
+            _gasto[nombre] = valor.toDouble();
         });
       }
       final acabados = datos['acabados'];
@@ -230,10 +249,12 @@ class PaletaDibujo extends ChangeNotifier {
           if (nombre is String) _acabados.add(nombre);
         }
       }
+      _celebrado = datos['celebrado'] == true;
     } catch (_) {
       // Datos dañados: se empieza con la paleta completa.
       _gasto.clear();
       _acabados.clear();
+      _celebrado = false;
     }
   }
 }

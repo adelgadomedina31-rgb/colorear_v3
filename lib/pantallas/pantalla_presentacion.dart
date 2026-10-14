@@ -159,7 +159,8 @@ class _Palabra extends StatelessWidget {
               scale: escala,
               child: _Letra(
                 letra: texto[k],
-                color: _coloresAlegres[(k + texto.length) % _coloresAlegres.length],
+                color: _coloresAlegres[
+                    (k + texto.length) % _coloresAlegres.length],
                 tamano: tamano,
               ),
             ),
@@ -176,7 +177,8 @@ class _Palabra extends StatelessWidget {
 
 /// Una letra gordita de color con borde blanco.
 class _Letra extends StatelessWidget {
-  const _Letra({required this.letra, required this.color, required this.tamano});
+  const _Letra(
+      {required this.letra, required this.color, required this.tamano});
 
   final String letra;
   final Color color;
@@ -197,7 +199,10 @@ class _Letra extends StatelessWidget {
               ..strokeJoin = StrokeJoin.round
               ..color = Colors.white,
             shadows: const <Shadow>[
-              Shadow(color: Color(0x55000000), offset: Offset(0, 5), blurRadius: 8),
+              Shadow(
+                  color: Color(0x55000000),
+                  offset: Offset(0, 5),
+                  blurRadius: 8),
             ],
           ),
         ),
@@ -247,7 +252,10 @@ class _GotasSaltarinas extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 3),
                       boxShadow: const <BoxShadow>[
-                        BoxShadow(color: Color(0x40000000), blurRadius: 4, offset: Offset(0, 3)),
+                        BoxShadow(
+                            color: Color(0x40000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 3)),
                       ],
                     ),
                   ),
@@ -261,7 +269,8 @@ class _GotasSaltarinas extends StatelessWidget {
 }
 
 class _Estrella {
-  _Estrella(this.x, this.velocidad, this.desfase, this.tamano, this.color, this.giro);
+  _Estrella(
+      this.x, this.velocidad, this.desfase, this.tamano, this.color, this.giro);
 
   final double x; // 0..1 del ancho
   final double velocidad; // alturas de pantalla por segundo
@@ -303,7 +312,8 @@ class _PintorEstrellas extends CustomPainter {
       final y = ((segundos * e.velocidad + e.desfase) % 1.35) - 0.15;
       final x = e.x + 0.03 * math.sin(segundos * 2 + e.desfase * 5);
       final centro = Offset(x * size.width, y * size.height);
-      final estrella = _forma(centro, e.tamano, segundos * e.giro * 2 * math.pi);
+      final estrella =
+          _forma(centro, e.tamano, segundos * e.giro * 2 * math.pi);
       relleno.color = e.color;
       canvas.drawPath(estrella, relleno);
       canvas.drawPath(estrella, borde);

@@ -41,8 +41,8 @@ Iterable<Widget> tarritosVisibles(WidgetTester tester) => tester.widgetList(
 /// Deja correr el tiempo de verdad (para las mediciones) y el de la prueba.
 Future<void> esperar(WidgetTester tester, {int vueltas = 8}) async {
   for (var k = 0; k < vueltas; k++) {
-    await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester
+        .runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await tester.pump(const Duration(milliseconds: 150));
   }
 }
@@ -74,6 +74,18 @@ Future<Rect> abrirPantalla(WidgetTester tester, List<Dibujo> dibujos) async {
   return tester.getRect(find
       .descendant(of: find.byType(Lienzo), matching: find.byType(Listener))
       .first);
+}
+
+/// La celebración de "¡Felicidades!" (si está a la vista).
+final Finder celebracion = find.byKey(const ValueKey<String>('celebracion'));
+
+/// Toca la celebración para quitarla y espera a que se vaya.
+Future<void> quitarCelebracion(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 1));
+  await tester.tap(celebracion);
+  for (var k = 0; k < 8; k++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 /// Cierra la pantalla y deja terminar las esperas de la voz y los sonidos.

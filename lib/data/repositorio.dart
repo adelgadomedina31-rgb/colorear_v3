@@ -26,9 +26,10 @@ class Repositorio {
     await Future.wait(
       dibujos.where((d) => d.archivoLineas != null).map((d) async {
         try {
-          final datos = await rootBundle.load('assets/drawings/${d.archivoLineas}');
-          d.lineasPng =
-              datos.buffer.asUint8List(datos.offsetInBytes, datos.lengthInBytes);
+          final datos =
+              await rootBundle.load('assets/drawings/${d.archivoLineas}');
+          d.lineasPng = datos.buffer
+              .asUint8List(datos.offsetInBytes, datos.lengthInBytes);
         } catch (_) {
           // Sin la imagen, las líneas se dibujan a partir de las zonas.
         }

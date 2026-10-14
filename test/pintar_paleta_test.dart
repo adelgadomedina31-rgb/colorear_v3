@@ -25,7 +25,8 @@ void main() {
 
     // Se pinta con amarillo, muchos toques, hasta que se acabe.
     Offset punto(double x, double y) =>
-        lienzo.topLeft + Offset(lienzo.width * x / 1000, lienzo.height * y / 1000);
+        lienzo.topLeft +
+        Offset(lienzo.width * x / 1000, lienzo.height * y / 1000);
     // Toques repartidos por todo el dibujo (cielo, cara y rayos del sol).
     final lugares = <Offset>[
       for (final y in const <double>[80, 220, 360, 500, 640, 780, 920])

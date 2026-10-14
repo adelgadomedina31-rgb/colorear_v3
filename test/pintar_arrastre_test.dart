@@ -16,7 +16,8 @@ void main() {
     final paleta = PaletaDibujo.enMemoria('arrastre')!;
     final primero = PaletaDibujo.coloresDe(dibujo).first.nombre; // Rojo
     Offset punto(double x, double y) =>
-        lienzo.topLeft + Offset(lienzo.width * x / 1000, lienzo.height * y / 1000);
+        lienzo.topLeft +
+        Offset(lienzo.width * x / 1000, lienzo.height * y / 1000);
 
     // Zigzag por todo el dibujo, sin levantar el dedo.
     var pasadas = 0;

@@ -24,11 +24,20 @@ void main() {
               Offset(lienzo.width * x / 1000, lienzo.height * y / 1000),
     ];
     var toques = 0;
+    var celebro = false;
     while (paleta.disponibles(colores).isNotEmpty && toques < 400) {
+      if (celebracion.evaluate().isNotEmpty) {
+        // Al pasar el 95% sale la celebración: se quita tocándola.
+        celebro = true;
+        await quitarCelebracion(tester);
+        expect(celebracion, findsNothing);
+        continue;
+      }
       await tester.tapAt(lugares[toques % lugares.length]);
       toques++;
       await esperar(tester, vueltas: 3);
     }
+    expect(celebro, isTrue);
     expect(paleta.disponibles(colores), isEmpty);
     await esperar(tester);
     await tester.pump(const Duration(seconds: 1));

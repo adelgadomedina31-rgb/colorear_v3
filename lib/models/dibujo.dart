@@ -86,8 +86,7 @@ class Dibujo {
   Rect limites(int i) => _limites[i];
 
   /// Áreas visibles ya calculadas (una por región).
-  late final List<double?> _areas =
-      List<double?>.filled(regiones.length, null);
+  late final List<double?> _areas = List<double?>.filled(regiones.length, null);
 
   /// Área que se ve de la región [i] (en unidades²): la parte de la región
   /// que no queda tapada por las regiones de más arriba. Se calcula una sola
@@ -162,7 +161,8 @@ class Dibujo {
         : id;
 
     final ladoCrudo = json['lado'];
-    final lado = (ladoCrudo is num && ladoCrudo > 0) ? ladoCrudo.toDouble() : 1000.0;
+    final lado =
+        (ladoCrudo is num && ladoCrudo > 0) ? ladoCrudo.toDouble() : 1000.0;
 
     final listaRegiones = json['regiones'];
     if (listaRegiones is! List || listaRegiones.isEmpty) {

@@ -234,7 +234,8 @@ class _Titulo extends StatelessWidget {
   Widget build(BuildContext context) {
     const texto = 'COLOREA ARLETH';
     final letras = <TextSpan>[];
-    var n = 0; // cuenta solo las letras, para que los colores no salten con el espacio
+    var n =
+        0; // cuenta solo las letras, para que los colores no salten con el espacio
     for (var i = 0; i < texto.length; i++) {
       final letra = texto[i];
       if (letra == ' ') {

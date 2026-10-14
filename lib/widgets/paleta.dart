@@ -137,7 +137,8 @@ class _Ranura extends StatelessWidget {
             maxWidth: ancho,
             child: Transform.scale(
               scale: t,
-              child: Opacity(opacity: t.clamp(0.0, 1.0).toDouble(), child: hijo),
+              child:
+                  Opacity(opacity: t.clamp(0.0, 1.0).toDouble(), child: hijo),
             ),
           ),
         );

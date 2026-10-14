@@ -14,7 +14,8 @@ void main() {
     expect(dibujo.nombre, 'Cuadro');
     expect(dibujo.regiones.length, 2);
     expect(dibujo.regiones.first.path.contains(const Offset(300, 300)), isTrue);
-    expect(dibujo.regiones.first.path.contains(const Offset(700, 700)), isFalse);
+    expect(
+        dibujo.regiones.first.path.contains(const Offset(700, 700)), isFalse);
   });
 
   test('el área visible descuenta lo que tapan las regiones de encima', () {

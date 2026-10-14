@@ -69,8 +69,7 @@ void main() {
       final paleta = await PaletaDibujo.cargar('limite');
       expect(paleta.actualizar(colores, <double>[0.35, 0, 0, 0, 0]), isEmpty);
       expect(paleta.nivel('Amarillo'), closeTo(0.5, 0.01));
-      final acabados =
-          paleta.actualizar(colores, <double>[0.70, 0.1, 0, 0, 0]);
+      final acabados = paleta.actualizar(colores, <double>[0.70, 0.1, 0, 0, 0]);
       expect(_nombres(acabados), <String>['Amarillo']);
       expect(paleta.acabado('Amarillo'), isTrue);
       expect(paleta.nivel('Amarillo'), 0);
@@ -113,6 +112,26 @@ void main() {
       final texto = prefs.getString('paleta_guardar');
       expect(texto, isNotNull);
       expect(texto, contains('Rojo'));
+    });
+
+    test('recuerda si ya salió la celebración', () async {
+      final paleta = await PaletaDibujo.cargar('celebrado');
+      expect(paleta.celebrado, isFalse);
+      paleta.marcarCelebrado();
+      await PaletaDibujo.guardarPendientes();
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('paleta_celebrado'), contains('celebrado'));
+      Pintura.borrarId('celebrado');
+      expect(PaletaDibujo.enMemoria('celebrado')!.celebrado, isFalse);
+    });
+
+    test('la celebración guardada se lee al abrir la app', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'paleta_terminado': '{"gasto":{"Rojo":0.71},"acabados":["Rojo"],'
+            '"celebrado":true}',
+      });
+      final paleta = await PaletaDibujo.cargar('terminado');
+      expect(paleta.celebrado, isTrue);
     });
 
     test('borrar lo pintado deja la paleta completa y borra lo guardado',
@@ -172,9 +191,11 @@ void main() {
         const <Color>[rojo, azul, amarillo],
       );
       expect(medida, isNotNull);
-      expect(medida![0], closeTo(0.5, 0.03));
-      expect(medida[1], closeTo(0.5, 0.03));
-      expect(medida[2], 0);
+      expect(medida!.colores[0], closeTo(0.5, 0.03));
+      expect(medida.colores[1], closeTo(0.5, 0.03));
+      expect(medida.colores[2], 0);
+      // Todo el dibujo está pintado.
+      expect(medida.pintado, closeTo(1.0, 0.02));
       expect(Pintura.fraccionPintable('medida'), closeTo(1.0, 0.01));
 
       // Solo el azul, en el fondo: cubre la mitad derecha.
@@ -191,8 +212,25 @@ void main() {
         ],
         const <Color>[rojo, azul],
       );
-      expect(soloAzul![0], 0);
-      expect(soloAzul[1], closeTo(0.5, 0.03));
+      expect(soloAzul!.colores[0], 0);
+      expect(soloAzul.colores[1], closeTo(0.5, 0.03));
+      // Lo pintado cuenta igual aunque el color no esté en la paleta.
+      expect(soloAzul.pintado, closeTo(0.5, 0.03));
+      final sinPaleta = await Pintura.medirColores(
+        d,
+        <Trazo>[
+          Trazo(
+            region: 0,
+            color: azul,
+            radio: 1500,
+            semilla: 0,
+            inicio: const Offset(750, 500),
+          ),
+        ],
+        const <Color>[rojo],
+      );
+      expect(sinPaleta!.colores[0], 0);
+      expect(sinPaleta.pintado, closeTo(0.5, 0.03));
     });
   });
 }

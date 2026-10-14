@@ -58,14 +58,24 @@ class Ajustes {
 
   // --------------------------------------------------------------- sonidos
 
-  /// true = suena un "plop" al pintar.
+  /// true = suenan las gotas de pintura y el pincel al pintar.
   static const bool sonidoPintar = true;
 
-  /// Volumen del "plop" (0 a 1).
-  static const double volumenPintar = 0.7;
+  /// Volumen de la gota de pintura al tocar el dibujo (0 a 1).
+  static const double volumenPintar = 0.8;
 
-  /// Al arrastrar el dedo, suena otro "plop" cada esta distancia recorrida.
-  static const double distanciaEntrePlops = 300;
+  /// Volumen del pincel al arrastrar el dedo (0 a 1).
+  static const double volumenTrazo = 0.55;
+
+  /// Al arrastrar el dedo, suena otra pasada de pincel cada esta distancia
+  /// recorrida (más chico = suena más seguido).
+  static const double distanciaEntreTrazos = 220;
+
+  /// true = suena una fiesta (campanitas y aplausos) al terminar un dibujo.
+  static const bool sonidoCelebracion = true;
+
+  /// Volumen de la fiesta (0 a 1).
+  static const double volumenCelebracion = 0.9;
 
   // ---------------------------------------------------------- presentación
 
@@ -81,11 +91,21 @@ class Ajustes {
   /// true = al elegir un color, una voz dice su nombre.
   static const bool vozActiva = true;
 
-  /// Tono de la voz: 1.0 es normal; más alto suena más infantil (máximo 2.0).
-  static const double vozTono = 1.5;
+  /// Tono de la voz: 1.0 es normal. Subirlo mucho la hace sonar a robot;
+  /// 1.1 la deja un poquito más dulce pero natural (máximo 2.0).
+  static const double vozTono = 1.1;
 
   /// Velocidad de la voz: 0.5 es normal; más bajo = más lento y claro.
-  static const double vozVelocidad = 0.42;
+  static const double vozVelocidad = 0.45;
+
+  /// true = si el celular tiene voces "de internet" (suenan más naturales),
+  /// se usan. Solo conviene si el celular SIEMPRE tiene internet: sin
+  /// internet esas voces pueden quedarse calladas.
+  static const bool vozPermitirInternet = false;
+
+  /// true = si en assets/voces/ hay grabaciones (por ejemplo "rojo.m4a"),
+  /// se usan en vez de la voz del celular. Ver assets/voces/LEEME.txt.
+  static const bool usarVocesGrabadas = true;
 
   /// Pausa mínima (milisegundos) antes de poder elegir otro color, aunque la
   /// voz termine antes. La paleta también espera a que la voz termine.
@@ -108,7 +128,25 @@ class Ajustes {
   static const String vozEligeOtro = '¡Elige otro color!';
 
   /// Lo que dice si toca el dibujo cuando ya no queda ningún color.
-  static const String vozSinColores = '¡Ya no quedan colores! Elige otro dibujo.';
+  static const String vozSinColores =
+      '¡Ya no quedan colores! Elige otro dibujo.';
+
+  // ------------------------------------------------------------ celebración
+
+  /// Cuando esta parte del dibujo queda pintada (0.95 = el 95%), con
+  /// cualquier color, sale la celebración con estrellas. Sale una sola vez
+  /// por dibujo (vuelve a salir si se borra y se pinta de nuevo).
+  static const double porcentajeCelebracion = 0.95;
+
+  /// Lo que se ve en grande en la celebración (dos líneas).
+  static const String celebracionLinea1 = '¡FELICIDADES!';
+  static const String celebracionLinea2 = 'LO PINTASTE MUY BIEN';
+
+  /// Lo que dice la voz en la celebración.
+  static const String vozCelebracion = '¡Felicidades! ¡Lo pintaste muy bien!';
+
+  /// Cuántos segundos se queda la celebración (también se quita tocándola).
+  static const int segundosCelebracion = 7;
 
   // ---------------------------------------------------------------- colores
 
@@ -131,7 +169,8 @@ class Ajustes {
   /// Los colores de cada dibujo (como mucho 5), con su "id".
   /// Se escriben con el mismo nombre que en la lista [colores].
   /// El primero de la lista es el que queda elegido al entrar al dibujo.
-  static const Map<String, List<String>> paletasDibujos = <String, List<String>>{
+  static const Map<String, List<String>> paletasDibujos =
+      <String, List<String>>{
     'sol': <String>['Amarillo', 'Naranja', 'Celeste', 'Rojo', 'Rosado'],
     'flor': <String>['Rosado', 'Amarillo', 'Verde', 'Celeste', 'Morado'],
     'pez': <String>['Naranja', 'Amarillo', 'Celeste', 'Azul', 'Verde'],

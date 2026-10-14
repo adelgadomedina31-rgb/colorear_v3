@@ -7,12 +7,14 @@ dibujos dice **COLOREA ARLETH**.
 ## Cómo funciona
 
 - **Presentación:** al abrir la app caen estrellas de colores, aparecen saltando las letras de **PINTEMOS ARLETH**. Es sin sonido, dura unos 3,5 segundos y tocar la pantalla la salta.
-- **Pintar con toques:** se elige un color abajo y se toca el dibujo. Cada toque suena con un "plop" y deja una mancha de pintura que se derrama desde el dedo, con gotitas salpicadas. Las zonas grandes (el cielo, la cabeza del gato) necesitan varios toques; las pequeñas (una ventana, una oreja) se llenan de un solo toque. Si arrastra el dedo, la pintura lo sigue.
+- **Pintar con toques:** se elige un color abajo y se toca el dibujo. Cada toque suena como una gota de pintura que cae y salpica (hay 5 gotas distintas, cada una termina en una nota musical, así tocar seguido suena como una melodía) y deja una mancha de pintura que se derrama desde el dedo, con gotitas salpicadas. Las zonas grandes (el cielo, la cabeza del gato) necesitan varios toques; las pequeñas (una ventana, una oreja) se llenan de un solo toque. Si arrastra el dedo, la pintura lo sigue con un sonido de pincel sobre el papel (4 distintos, con un brillito suave).
 - El color queda siempre **dentro de la zona** donde empezó el dedo; aunque se salga de las líneas, no se sale la pintura.
 - **Paleta de cada dibujo:** cada dibujo trae sus propios colores, como mucho 5, elegidos para que tengan sentido (el sol: amarillo, naranja, celeste, rojo y rosado; el pingüino: negro, naranja, celeste, azul y gris...). Cada color es un tarrito redondo que muestra cuánta pintura le queda. El elegido crece, rebota y muestra una estrellita.
 - **Cada color pinta como mucho el 70% del dibujo:** lo que gasta pintura es la parte del dibujo que cubre ese color (pintar encima de lo que ya es de ese color no gasta). Cuando llega al 70%, la voz dice "¡Se acabó el color rojo!", el tarrito desaparece de la paleta y queda elegido el siguiente color. Si le queda poquito, las últimas manchas salen más chicas. Así aprende a usar varios colores.
+- **Celebración al terminar:** cuando el dibujo queda pintado al menos en un **95%** (con cualquier color, no hace falta usar todos), sale un cartel grande **"¡FELICIDADES! LO PINTASTE MUY BIEN"** con estrellas que giran y brillan alrededor y estrellitas que salen volando, suena una fiesta (campanitas y aplausos) y la voz dice "¡Felicidades! ¡Lo pintaste muy bien!". Se quita sola a los 7 segundos o tocándola. Sale una sola vez por dibujo; si se borra y se vuelve a pintar, sale otra vez. Como cada color pinta como mucho el 70%, para terminar un dibujo se usan al menos 2 colores.
 - **Cada dibujo guarda su paleta:** al entrar a un dibujo sin pintar, la paleta está completa; al volver a uno ya pintado, aparece como se dejó (sin los colores que se acabaron), aunque se cierre la app. Si se acaban los 5 colores, la bandeja muestra "¡Muy bien!" con dos estrellas.
-- **Voz de los colores:** al elegir un color, una voz dice su nombre ("¡Rojo!"). Mientras habla, los demás colores se ven más claros y no responden, así la palabra se escucha completa.
+- **Voz de los colores:** al elegir un color, una voz dice su nombre ("¡Rojo!"). Mientras habla, los demás colores se ven más claros y no responden, así la palabra se escucha completa. La voz usa un tono casi normal (antes era muy aguda y sonaba a robot) y la app elige la voz en español de mejor calidad que tenga el celular.
+- **Voces grabadas (opcional, las más naturales):** si grabas tu voz diciendo los colores y las frases, y pones los archivos en `assets/voces/`, la app usa esas grabaciones en vez de la voz del celular. Lo que no esté grabado lo sigue diciendo la voz del celular. Ver `assets/voces/LEEME.txt`.
 - **Se guarda solo:** lo pintado queda guardado en el celular (una imagen por dibujo), aunque se cierre la app o se apague el teléfono.
 - **Siempre fluida:** cada mancha, al terminar de derramarse, se "hornea" dentro de la imagen del dibujo. Por eso pintar cuesta lo mismo al principio que después de horas de uso.
 - Botones grandes arriba: **inicio**, **anterior**, **siguiente** y **borrar** (el rojo). Borrar no pregunta: deja el dibujo en blanco y su paleta completa otra vez.
@@ -29,6 +31,13 @@ La voz es la del propio celular ("texto a voz"), así que no necesita internet. 
 2. En el celular: **Ajustes → Accesibilidad (o Sistema) → Salida de texto a voz**. Elige el motor de Google y en su configuración descarga la voz **Español (Estados Unidos)** o **Español (España)**.
 3. Cierra y vuelve a abrir ARVI.
 
+### Para que la voz suene más natural
+
+- En **Salida de texto a voz → Motor de Google → Instalar datos de voz → Español**, cada idioma trae varias voces (Voz I, Voz II...). Escúchalas con el botón de prueba y elige la que más te guste: ARVI usa la voz que tenga el celular.
+- Actualiza la app **"Servicios de voz de Google"** desde la Play Store: las versiones nuevas traen voces más naturales.
+- Las voces "de internet" suenan todavía mejor, pero sin internet se callan. Si el celular siempre tiene internet, pon `vozPermitirInternet = true` en `lib/config.dart`.
+- Lo más natural de todo: **grabar tu voz** (ver `assets/voces/LEEME.txt`).
+
 ### Afinar cómo se siente
 
 Todo está en `lib/config.dart`:
@@ -39,9 +48,16 @@ Todo está en `lib/config.dart`:
 | Que más zonas se llenen de un toque | sube `areaUnToque` |
 | Manchas más grandes o más chicas | `escalaMancha` (1.2 = 20% más grandes) |
 | Derrame más lento o más rápido | `duracionDerrame` |
-| Quitar o bajar el "plop" | `sonidoPintar`, `volumenPintar` |
+| Quitar o bajar el sonido al pintar | `sonidoPintar`, `volumenPintar` (gota), `volumenTrazo` (pincel) |
+| Que el pincel suene más o menos seguido | `distanciaEntreTrazos` |
+| Cuánto hay que pintar para la celebración | `porcentajeCelebracion` (0.95 = el 95%) |
+| Lo que dice el cartel y la voz al terminar | `celebracionLinea1`, `celebracionLinea2`, `vozCelebracion` |
+| Cuánto dura la celebración | `segundosCelebracion` |
+| Quitar o bajar la fiesta al terminar | `sonidoCelebracion`, `volumenCelebracion` |
 | Quitar o cambiar la presentación | `mostrarPresentacion`, `presentacionLinea1/2` |
-| Voz más aguda o más grave | `vozTono` (1.0 normal, hasta 2.0) |
+| Voz más aguda o más grave | `vozTono` (1.0 normal, hasta 2.0; muy alta suena a robot) |
+| Usar las voces "de internet" del celular | `vozPermitirInternet` |
+| Usar (o no) tus voces grabadas | `usarVocesGrabadas` |
 | Voz más lenta o más rápida | `vozVelocidad` |
 | Cuánto puede pintar cada color | `limitePorColor` (0.70 = el 70% del dibujo) |
 | Los colores de cada dibujo | `paletasDibujos` (el primero queda elegido al entrar) |
@@ -169,11 +185,13 @@ El nombre dentro de `indice.json` debe ser exactamente el del archivo, y cada di
 | Cómo se pinta con el dedo | `lib/widgets/lienzo.dart` |
 | Guardado de lo pintado | `lib/models/pintura.dart` |
 | Voz de los colores | `lib/servicios/voz.dart` |
+| Voces grabadas (opcional) | `assets/voces/` (ver `LEEME.txt` ahí) |
+| Celebración al terminar un dibujo | `lib/widgets/celebracion.dart` |
 | Paleta de cada dibujo y el límite del 70% | `lib/models/paleta_dibujo.dart` y `lib/widgets/paleta.dart` |
 | Cómo se mide cuánto pinta cada color | `medirColores` en `lib/models/pintura.dart` |
 | Convertir imágenes en dibujos | `tools/convertir_imagenes.py` (carpeta `mis_dibujos/`) |
 | Ícono de la app | `tools/generar_icono.py` (carpeta `icono/`) |
-| Sonidos | `lib/servicios/sonidos.dart` y `assets/sonidos/` (se crean con `tools/generar_sonidos.py`) |
+| Sonidos (gotas, pincel y fiesta) | `lib/servicios/sonidos.dart` y `assets/sonidos/` (se crean con `tools/generar_sonidos.py`, necesita `pip install numpy`) |
 | Presentación al abrir | `lib/pantallas/pantalla_presentacion.dart` |
 | Pantalla de pintar (botones, posición de la paleta) | `lib/pantallas/pantalla_pintar.dart` |
 | Zona de papás | `lib/pantallas/pantalla_padres.dart` |
@@ -189,7 +207,5 @@ La carpeta `tools/` tiene scripts de Python opcionales:
 
 ## Ideas para mejorar
 
-- Un sonido suave o una carita feliz al terminar un dibujo.
-- Ícono propio de la app.
 - Cargar dibujos desde un archivo en vez de pegar texto.
 - Categorías en el menú (animales, vehículos, comida...).

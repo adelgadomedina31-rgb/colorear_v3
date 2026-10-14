@@ -84,7 +84,8 @@ class Trazo {
     );
     final camino = franja;
     if (camino != null) {
-      caja = caja.expandToInclude(camino.getBounds().inflate(anchoFranja / 2 + 2));
+      caja =
+          caja.expandToInclude(camino.getBounds().inflate(anchoFranja / 2 + 2));
     }
     return caja;
   }
@@ -140,7 +141,8 @@ class Trazo {
         c.dx + distancia * escala * math.cos(a),
         c.dy + distancia * escala * math.sin(a),
       );
-      forma.addOval(Rect.fromCircle(center: centro, radius: tamano * aparicion));
+      forma
+          .addOval(Rect.fromCircle(center: centro, radius: tamano * aparicion));
     }
     return forma;
   }
@@ -300,6 +302,18 @@ class Dibujante {
   }
 }
 
+/// Lo que midió [Pintura.medirColores].
+class Medida {
+  const Medida(this.colores, this.pintado);
+
+  /// Qué parte del dibujo (0 a 1) cubre cada color, en el mismo orden que
+  /// los colores que se pidieron medir.
+  final List<double> colores;
+
+  /// Qué parte del dibujo (0 a 1) está pintada, con cualquier color.
+  final double pintado;
+}
+
 /// Lo que se ha pintado de cada dibujo.
 ///
 /// La pintura de cada dibujo es UNA imagen (de [resolucion] x [resolucion]),
@@ -388,7 +402,8 @@ class Pintura {
     await _cola;
     final carpeta = await _obtenerCarpeta();
     if (carpeta == null) return;
-    final pendientes = dibujos.where((d) => !_revisados.contains(d.id)).toList();
+    final pendientes =
+        dibujos.where((d) => !_revisados.contains(d.id)).toList();
     for (final d in pendientes) {
       _revisados.add(d.id);
     }
@@ -553,7 +568,8 @@ class Pintura {
           final esperada = versiones[id] ?? -1;
           if (esperada != version(id)) continue; // se borró mientras tanto
           // Primero se guarda el archivo (lo más importante)...
-          if (carpeta != null) await _escribirPng(carpeta, id, imagen, esperada);
+          if (carpeta != null)
+            await _escribirPng(carpeta, id, imagen, esperada);
           // ...y después se actualiza la miniatura del menú.
           final mini = await Dibujante.copiaPlana(imagen, resolucionMiniatura);
           if (esperada == version(id)) {
@@ -617,20 +633,20 @@ class Pintura {
   }
 
   /// Mide qué parte de lo que se puede pintar del dibujo cubre cada uno de
-  /// [colores]. Cuenta lo ya pintado y también las manchas [activos] que se
-  /// están pintando (como si ya hubieran terminado de derramarse).
+  /// [colores], y cuánto está pintado en total (con cualquier color).
+  /// Cuenta lo ya pintado y también las manchas [activos] que se están
+  /// pintando (como si ya hubieran terminado de derramarse).
   /// Devuelve null si no se pudo medir. Nunca lanza errores.
-  static Future<List<double>?> medirColores(
+  static Future<Medida?> medirColores(
     Dibujo d,
     List<Trazo> activos,
     List<Color> colores,
   ) async {
-    if (colores.isEmpty) return const <double>[];
     try {
       final total = await _contarPintables(d);
       final base = _completas[d.id];
       if (base == null && activos.isEmpty) {
-        return List<double>.filled(colores.length, 0.0);
+        return Medida(List<double>.filled(colores.length, 0.0), 0);
       }
       // Lo pintado (en chiquito) y encima las manchas que se están pintando.
       const lado = _ladoMedida;
@@ -657,8 +673,9 @@ class Pintura {
   }
 
   /// Cuenta los puntos de cada color. Solo cuentan los puntos bien pintados
-  /// (los bordes, mezclados con otro color, no cuentan).
-  static List<double> _contarColores(
+  /// (los bordes, mezclados con otro color, no cuentan). Para el total
+  /// pintado cuenta cualquier punto con pintura (también los bordes).
+  static Medida _contarColores(
     Uint8List pixeles,
     List<Color> colores,
     int total,
@@ -674,16 +691,20 @@ class Pintura {
       azules[k] = argb & 0xFF;
     }
     final cuentas = List<int>.filled(n, 0);
+    var pintados = 0;
     for (var i = 0; i + 3 < pixeles.length; i += 4) {
-      if (pixeles[i + 3] < 250) continue; // sin pintar (o un borde)
+      final alfa = pixeles[i + 3];
+      if (alfa >= 128) pintados++;
+      if (alfa < 250) continue; // sin pintar (o un borde)
       final r = pixeles[i];
       final g = pixeles[i + 1];
       final b = pixeles[i + 2];
       var mejor = -1;
       var mejorDistancia = 40; // qué tan parecido tiene que ser el color
       for (var k = 0; k < n; k++) {
-        final distancia =
-            (r - rojos[k]).abs() + (g - verdes[k]).abs() + (b - azules[k]).abs();
+        final distancia = (r - rojos[k]).abs() +
+            (g - verdes[k]).abs() +
+            (b - azules[k]).abs();
         if (distancia < mejorDistancia) {
           mejorDistancia = distancia;
           mejor = k;
@@ -692,7 +713,10 @@ class Pintura {
       if (mejor >= 0) cuentas[mejor]++;
     }
     final divisor = total > 0 ? total : _ladoMedida * _ladoMedida;
-    return <double>[for (final c in cuentas) c / divisor];
+    return Medida(
+      <double>[for (final c in cuentas) c / divisor],
+      math.min(1.0, pintados / divisor),
+    );
   }
 
   /// Cuántos puntos del dibujo (en chiquito) se pueden pintar: los que están
@@ -786,7 +810,8 @@ class Pintura {
     _cola = _cola.then((_) async {
       try {
         // Nunca más de 30 segundos: la cola no se puede quedar trabada.
-        await tarea(await _obtenerCarpeta()).timeout(const Duration(seconds: 30));
+        await tarea(await _obtenerCarpeta())
+            .timeout(const Duration(seconds: 30));
       } catch (_) {
         // Si algo falla al guardar o borrar, la app sigue funcionando.
       }
@@ -798,7 +823,8 @@ class Pintura {
     final carpeta = await (_carpeta ??= () async {
       try {
         final base = await getApplicationSupportDirectory();
-        final carpeta = Directory('${base.path}${Platform.pathSeparator}pintura');
+        final carpeta =
+            Directory('${base.path}${Platform.pathSeparator}pintura');
         await carpeta.create(recursive: true);
         return carpeta;
       } catch (_) {

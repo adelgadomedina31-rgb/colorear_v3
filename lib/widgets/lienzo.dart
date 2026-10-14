@@ -92,10 +92,10 @@ class _PintorLienzo extends CustomPainter {
 ///
 /// Cómo funciona:
 ///  - Cada toque deja una mancha de color que se "derrama" desde el dedo,
-///    con un "plop". El tamaño de la mancha depende del tamaño de la zona:
+///    con el sonido de una gota de pintura. El tamaño de la mancha depende del tamaño de la zona:
 ///    las zonas grandes necesitan varios toques y las pequeñas se llenan de
 ///    un solo toque (ver Ajustes).
-///  - Si el dedo se arrastra, la pintura lo sigue.
+///  - Si el dedo se arrastra, la pintura lo sigue (con sonido de pincel).
 ///  - La pintura queda "pegada" a la zona donde empezó el dedo y se recorta a
 ///    su forma, así que aunque el dedo se salga de las líneas el color no se sale.
 ///  - Cuando una mancha termina, se "hornea" dentro de la imagen del dibujo;
@@ -128,8 +128,9 @@ class Lienzo extends StatefulWidget {
   /// poco, las manchas salen más chicas y el arrastre se detiene a tiempo.
   final double Function()? margen;
 
-  /// Recibe cuánto del dibujo cubre cada uno de [colores] (0 a 1).
-  final ValueChanged<List<double>>? alMedir;
+  /// Recibe cuánto del dibujo cubre cada uno de [colores] (0 a 1) y cuánto
+  /// está pintado en total.
+  final ValueChanged<Medida>? alMedir;
 
   @override
   State<Lienzo> createState() => _EstadoLienzo();
@@ -149,7 +150,8 @@ class _EstadoLienzo extends State<Lienzo>
 
   int? _puntero; // el dedo que está pintando (se ignoran los demás)
   Trazo? _trazo; // la mancha que se está pintando ahora
-  double _recorrido = 0; // distancia arrastrada desde el último "plop"
+  double _recorrido =
+      0; // distancia arrastrada desde el último sonido de pincel
   bool _detenido = false; // se acabó la pintura a mitad de un arrastre
 
   /// Zona y color de la pasada que se pausó porque quedaba poca pintura
@@ -226,7 +228,7 @@ class _EstadoLienzo extends State<Lienzo>
     // Lo que la mancha actual pinte desde aquí se vuelve a contar desde cero
     // (lo de antes queda dentro de esta medición).
     _unidadesTrazo = 0;
-    List<double>? cobertura;
+    Medida? cobertura;
     try {
       cobertura = await Pintura.medirColores(
         widget.dibujo,
@@ -321,7 +323,8 @@ class _EstadoLienzo extends State<Lienzo>
       listas++;
     }
     if (listas > 0) {
-      final horneadas = _activos.sublist(0, listas).map((a) => a.trazo).toList();
+      final horneadas =
+          _activos.sublist(0, listas).map((a) => a.trazo).toList();
       _activos.removeRange(0, listas);
       Pintura.hornear(widget.dibujo, horneadas, _version);
     }
@@ -404,7 +407,7 @@ class _EstadoLienzo extends State<Lienzo>
     _estimado += extra;
     _activos.add(_Activo(trazo, _reloj.elapsedMilliseconds));
     if (!_ticker.isActive) _ticker.start();
-    Sonidos.plop();
+    Sonidos.gota();
     _pedirMedicion();
   }
 
@@ -480,9 +483,9 @@ class _EstadoLienzo extends State<Lienzo>
     _unidadesTrazo += extra * _areaPintable;
     _estimado += extra;
     _recorrido += paso;
-    if (_recorrido >= Ajustes.distanciaEntrePlops) {
+    if (_recorrido >= Ajustes.distanciaEntreTrazos) {
       _recorrido = 0;
-      Sonidos.plop();
+      Sonidos.trazo();
     }
     _pedirMedicion();
     setState(() {});
@@ -536,7 +539,9 @@ class _EstadoLienzo extends State<Lienzo>
         final ahora = _reloj.elapsedMilliseconds;
         final avances = <double>[
           for (final a in _activos)
-            ((ahora - a.nacio) / Ajustes.duracionDerrame).clamp(0.0, 1.0).toDouble(),
+            ((ahora - a.nacio) / Ajustes.duracionDerrame)
+                .clamp(0.0, 1.0)
+                .toDouble(),
         ];
         return Center(
           child: SizedBox(
