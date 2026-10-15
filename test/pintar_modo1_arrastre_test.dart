@@ -1,5 +1,5 @@
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'ayuda_pintar.dart';

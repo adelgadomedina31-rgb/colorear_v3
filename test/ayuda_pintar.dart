@@ -4,14 +4,14 @@ library;
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/modo_pintado.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
-import 'package:colorear_ninos/pantallas/pantalla_pintar.dart';
-import 'package:colorear_ninos/widgets/lienzo.dart';
-import 'package:colorear_ninos/widgets/paleta.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/modo_pintado.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_pantalla.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/lienzo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,7 +94,7 @@ void sinAvisosDeSonido() {
   addTearDown(() => FlutterError.onError = avisoOriginal);
 }
 
-/// Un dibujo de prueba: un solo cuadrado grande (sin paleta en config.dart,
+/// Un dibujo de prueba: un solo cuadrado grande (sin paleta en pintar_ajustes.dart,
 /// así que usa la de por defecto: Rojo, Amarillo, Verde, Azul y Rosado).
 Dibujo cuadrado(String id) => Dibujo.desdeTexto(
       '{"id":"$id","regiones":[{"id":"todo",'
@@ -105,7 +105,7 @@ Dibujo cuadrado(String id) => Dibujo.desdeTexto(
 Future<Rect> abrirPantalla(WidgetTester tester, List<Dibujo> dibujos) async {
   await tester.binding.setSurfaceSize(const Size(420, 860));
   await tester.pumpWidget(MaterialApp(
-    home: PantallaPintar(dibujos: dibujos, indice: 0),
+    home: PintarPantalla(dibujos: dibujos, indice: 0),
   ));
   await esperar(tester);
   return tester.getRect(find
@@ -173,7 +173,7 @@ Future<void> tocar(WidgetTester tester, Rect lienzo, Dibujo d, Offset p) async {
 /// imagen del dibujo (el lienzo mide ese tiempo con un reloj de verdad).
 Future<void> esperarHorneado(WidgetTester tester) async {
   await tester.runAsync(() => Future<void>.delayed(
-      const Duration(milliseconds: Ajustes.duracionDerrame + 150)));
+      const Duration(milliseconds: AjustesPintar.duracionDerrame + 150)));
   await esperar(tester, vueltas: 4);
 }
 

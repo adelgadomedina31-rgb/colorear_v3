@@ -1,7 +1,7 @@
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,7 +25,7 @@ void main() {
     expect(tarritosVisibles(tester).length, 5);
     expect(colorElegido(tester), isNull);
     expect(hayTarritoElegido(), isFalse);
-    expect(frases, <String>[Ajustes.vozEligeUnColor]);
+    expect(frases, <String>[AjustesPintar.vozEligeUnColor]);
     expect(await tarritosSaltan(tester), isTrue);
 
     // Tocar el dibujo sin color no pinta nada...
@@ -37,7 +37,8 @@ void main() {
     await tocar(tester, lienzo, sol, cara);
     await esperarHorneado(tester);
     expect(Pintura.completa('sol'), isNull);
-    expect(frases, <String>[Ajustes.vozEligeUnColor, Ajustes.vozEligeUnColor]);
+    expect(frases,
+        <String>[AjustesPintar.vozEligeUnColor, AjustesPintar.vozEligeUnColor]);
 
     // Elige el amarillo: la voz lo nombra, los tarritos dejan de saltar y
     // ya pinta.
@@ -62,14 +63,15 @@ void main() {
     await esperar(tester);
     expect(colorElegido(tester), isNull);
     expect(hayTarritoElegido(), isFalse);
-    expect(frases, <String>[Ajustes.vozEligeUnColor]);
+    expect(frases, <String>[AjustesPintar.vozEligeUnColor]);
 
     // Y al volver al sol, también.
     await esperarAvisos(tester);
     await tester.tap(find.byIcon(Icons.arrow_back_rounded));
     await esperar(tester);
     expect(colorElegido(tester), isNull);
-    expect(frases, <String>[Ajustes.vozEligeUnColor, Ajustes.vozEligeUnColor]);
+    expect(frases,
+        <String>[AjustesPintar.vozEligeUnColor, AjustesPintar.vozEligeUnColor]);
     await cerrarPantalla(tester);
   });
 }

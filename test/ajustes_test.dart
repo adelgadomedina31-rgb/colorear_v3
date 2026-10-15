@@ -1,5 +1,5 @@
-import 'package:colorear_ninos/models/modo_pintado.dart';
-import 'package:colorear_ninos/pantallas/pantalla_padres.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/modo_pintado.dart';
+import 'package:colorear_ninos/app/pantalla_ajustes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,7 +12,7 @@ void main() {
   testWidgets('en Ajustes se elige el modo de pintar y queda guardado',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(420, 860));
-    await tester.pumpWidget(const MaterialApp(home: PantallaPadres()));
+    await tester.pumpWidget(const MaterialApp(home: PantallaAjustes()));
     await tester.pump();
     expect(find.text('Ajustes'), findsOneWidget);
     expect(find.text('Modo 1 - Pintado total'), findsOneWidget);
@@ -26,6 +26,8 @@ void main() {
     expect(marca(1), findsOneWidget);
     expect(marca(2), findsNothing);
 
+    await tester.ensureVisible(find.byKey(const ValueKey<String>('modo_2')));
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey<String>('modo_2')));
     await tester.pump();
     expect(ModoPintado.actual, ModoPintado.porObjeto);
@@ -34,6 +36,8 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getInt('modo_pintado'), 2);
 
+    await tester.ensureVisible(find.byKey(const ValueKey<String>('modo_1')));
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey<String>('modo_1')));
     await tester.pump();
     expect(ModoPintado.actual, ModoPintado.total);

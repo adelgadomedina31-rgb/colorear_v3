@@ -1,7 +1,7 @@
 name: colorear_ninos
 description: ARVI - app para colorear sin anuncios y sin internet, pensada para una niña de 3 años.
 publish_to: 'none'
-version: 9.0.0+9
+version: 10.0.0+10
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
@@ -26,5 +26,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/drawings/
-    - assets/sonidos/
+    # Sonidos: cada grupo en su carpeta (ver assets/sonidos/LEEME.txt).
+    # Si agregas una carpeta nueva de sonidos, agrégala también aquí.
+    - assets/sonidos/comunes/
+    - assets/sonidos/pintar/
+    - assets/sonidos/colores/
+    - assets/sonidos/animales/
     - assets/voces/

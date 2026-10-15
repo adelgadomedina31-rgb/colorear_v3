@@ -1,7 +1,7 @@
 import 'dart:ui';
 
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

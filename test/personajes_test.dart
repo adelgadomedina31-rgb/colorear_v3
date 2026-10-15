@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/personaje_dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/personaje_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 List<Dibujo> _dibujosDeLaApp() {
@@ -36,7 +36,7 @@ void main() {
   test('cada dibujo de la app tiene su personaje y sus partes existen', () {
     final dibujos = _dibujosDeLaApp();
     for (final d in dibujos) {
-      final definido = Ajustes.personajes[d.id];
+      final definido = AjustesPintar.personajes[d.id];
       expect(definido, isNotNull, reason: 'falta el personaje de "${d.id}"');
       final ids = <String>{for (final r in d.regiones) r.id};
       for (final parte in definido!.partes) {
@@ -49,7 +49,7 @@ void main() {
       expect(personaje.zonas.length, lessThan(d.regiones.length), reason: d.id);
     }
     // No sobra el personaje de un dibujo que no existe.
-    expect(Ajustes.personajes.keys.toSet(),
+    expect(AjustesPintar.personajes.keys.toSet(),
         <String>{for (final d in dibujos) d.id});
   });
 
@@ -64,7 +64,7 @@ void main() {
         '${_cuadro('mancha', 450, 500, 550, 600)}]}');
     final personaje = PersonajeDibujo.de(d);
     expect(personaje.existe, isTrue);
-    expect(personaje.nombre, Ajustes.personajeSinNombre);
+    expect(personaje.nombre, AjustesPintar.personajeSinNombre);
     expect(personaje.zonas, <int>{1, 2}); // el cuerpo y la cola
   });
 
@@ -94,7 +94,7 @@ void main() {
     final soloPartes = Dibujo.desdeTexto(
         '{"id":"foto_sol2","regiones":[$zonas],"personaje":["cara"]}');
     final cara = PersonajeDibujo.de(soloPartes);
-    expect(cara.nombre, Ajustes.personajeSinNombre);
+    expect(cara.nombre, AjustesPintar.personajeSinNombre);
     expect(cara.zonas, <int>{1});
   });
 
@@ -117,7 +117,7 @@ void main() {
             d, const <Trazo>[], const <Color>[rojo, azul],
             personaje: personaje.zonas);
         expect(soloPersonaje!.personaje,
-            greaterThanOrEqualTo(Ajustes.personajeTerminado),
+            greaterThanOrEqualTo(AjustesPintar.personajeTerminado),
             reason: d.id);
         // (Los bordes, mezclados con el blanco, no cuentan como "rojo".)
         expect(soloPersonaje.enPersonaje[0], greaterThan(0.85), reason: d.id);
@@ -136,8 +136,8 @@ void main() {
         final todo = await Pintura.medirColores(
             d, const <Trazo>[], const <Color>[rojo, azul],
             personaje: personaje.zonas);
-        expect(
-            todo!.pintado, greaterThanOrEqualTo(Ajustes.porcentajeCelebracion),
+        expect(todo!.pintado,
+            greaterThanOrEqualTo(AjustesPintar.porcentajeCelebracion),
             reason: d.id);
         expect(todo.personaje, greaterThanOrEqualTo(0.97), reason: d.id);
         expect(todo.fueraDelPersonaje[0], lessThan(0.01), reason: d.id);

@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 """Genera los sonidos de la app en assets/sonidos/ (archivos .wav).
 
+  comunes/ (los usan todos los juegos)
+  - felicidades.wav: la fiesta de las celebraciones (campanitas que
+    suben, destellos y aplausos).
+  - acierto.wav: campanitas cortas cuando acierta.
+  - boing.wav: un "boing" suave cuando toca el que no era.
+
+  pintar/
   - gota1.wav ... gota5.wav: una gota de pintura que cae y salpica
     (al tocar el dibujo). Cada una termina en una nota distinta de una
     escala alegre, así al tocar seguido suena como una melodía.
   - trazo1.wav ... trazo4.wav: el pincel que pasa sobre el papel
     (al arrastrar el dedo), con un brillito suave.
-  - felicidades.wav: la fiesta al terminar un dibujo (campanitas que
-    suben, destellos y aplausos).
+
+  colores/
+  - reventar.wav: el globo que revienta, con un destello.
+
+Los sonidos de los animales NO se generan aquí: si quieres sonidos de
+verdad, pon los archivos en assets/sonidos/animales/ (ver su LEEME.txt).
 
 Todo se sintetiza con matemáticas (no se descarga nada).
 Necesita numpy.  Uso:  python3 tools/generar_sonidos.py
@@ -198,24 +209,76 @@ def felicidades():
     return final
 
 
+def acierto():
+    """Tres campanitas rápidas que suben (¡muy bien!)."""
+    pista = np.zeros(int(FS * 0.9))
+    for inicio, n in [(0.0, "G5"), (0.08, "C6"), (0.16, "E6")]:
+        poner(pista, inicio, campanita(nota(n), 0.7, 0.5))
+    poner(pista, 0.16, campanita(nota("C5"), 0.7, 0.25))
+    return suavizar_final(normalizar(pista, 0.75), 60)
+
+
+def boing():
+    """Un "boing" de resorte, suave y gracioso (sin regañar)."""
+    dur = 0.5
+    t = tiempo(dur)
+    f = 170 + 230 * np.exp(-t / 0.06)
+    f = f * (1 + 0.1 * np.sin(2 * np.pi * 13 * t) * np.exp(-t / 0.25))
+    fase = 2 * np.pi * np.cumsum(f) / FS
+    env = (1 - np.exp(-t / 0.004)) * np.exp(-t / 0.16)
+    s = (np.sin(fase) + 0.25 * np.sin(2 * fase)) * env
+    return suavizar_final(normalizar(s, 0.6), 40)
+
+
+def reventar(semilla=7):
+    """Un globo que revienta ("¡pop!") y un destello de estrellitas."""
+    azar = np.random.default_rng(semilla)
+    dur = 0.6
+    t = tiempo(dur)
+    pista = np.zeros(len(t))
+    # El estallido: ruido de todas las frecuencias que se corta enseguida.
+    pop = filtrar(azar.standard_normal(len(t)), 300, 9000)
+    pop *= (1 - np.exp(-t / 0.0005)) * np.exp(-t / 0.018)
+    pista += normalizar(pop, 0.9)
+    # Un golpecito grave, para que suene "redondo".
+    golpe = np.sin(2 * np.pi * 110 * t) * np.exp(-t / 0.03)
+    pista += normalizar(golpe, 0.35)
+    # El destello.
+    for inicio, n in [(0.05, "E6"), (0.11, "G6"), (0.17, "C7")]:
+        poner(pista, inicio, campanita(nota(n), 0.4, 0.12))
+    return suavizar_final(normalizar(pista, 0.85), 40)
+
+
 def main():
     carpeta = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                             "..", "assets", "sonidos"))
-    os.makedirs(carpeta, exist_ok=True)
-    # Quita los sonidos de versiones anteriores.
-    for viejo in ("plop1.wav", "plop2.wav", "plop3.wav"):
+    for grupo in ("comunes", "pintar", "colores", "animales"):
+        os.makedirs(os.path.join(carpeta, grupo), exist_ok=True)
+    # Quita los sonidos de versiones anteriores (antes estaban sueltos).
+    for viejo in os.listdir(carpeta):
         ruta = os.path.join(carpeta, viejo)
-        if os.path.exists(ruta):
+        if viejo.endswith(".wav") and os.path.isfile(ruta):
             os.remove(ruta)
+
+    def guardar_en(grupo, nombre, senal):
+        guardar(os.path.join(carpeta, grupo, nombre), senal)
+
+    guardar_en("comunes", "felicidades.wav", felicidades())
+    guardar_en("comunes", "acierto.wav", acierto())
+    guardar_en("comunes", "boing.wav", boing())
     # Escala pentatónica de Do (suena bien en cualquier orden).
     escala = ["C5", "D5", "E5", "G5", "A5"]
     for i, n in enumerate(escala):
-        guardar(os.path.join(carpeta, f"gota{i + 1}.wav"), gota(nota(n), 100 + i))
+        guardar_en("pintar", f"gota{i + 1}.wav", gota(nota(n), 100 + i))
     for i, n in enumerate(["C5", "E5", "G5", "A5"]):
-        guardar(os.path.join(carpeta, f"trazo{i + 1}.wav"), trazo(nota(n), 200 + i))
-    guardar(os.path.join(carpeta, "felicidades.wav"), felicidades())
-    for f in sorted(os.listdir(carpeta)):
-        print(f, os.path.getsize(os.path.join(carpeta, f)), "bytes")
+        guardar_en("pintar", f"trazo{i + 1}.wav", trazo(nota(n), 200 + i))
+    guardar_en("colores", "reventar.wav", reventar())
+    for grupo in sorted(os.listdir(carpeta)):
+        ruta_grupo = os.path.join(carpeta, grupo)
+        if not os.path.isdir(ruta_grupo):
+            continue
+        for f in sorted(os.listdir(ruta_grupo)):
+            print(f"{grupo}/{f}", os.path.getsize(os.path.join(ruta_grupo, f)), "bytes")
 
 
 if __name__ == "__main__":

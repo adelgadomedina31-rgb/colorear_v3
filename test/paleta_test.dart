@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/modo_pintado.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
+import 'package:colorear_ninos/app/ajustes_app.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/modo_pintado.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,7 +49,7 @@ void main() {
           File('assets/drawings/$archivo').readAsStringSync(),
         ) as Map<String, dynamic>;
         final id = datos['id'] as String;
-        final nombres = Ajustes.paletasDibujos[id];
+        final nombres = AjustesPintar.paletasDibujos[id];
         expect(nombres, isNotNull, reason: 'falta la paleta de "$id"');
         final colores = PaletaDibujo.coloresDe(_dibujo(id));
         // Todos los nombres existen en la lista de colores.
@@ -76,7 +77,7 @@ void main() {
 
     test('sin paleta propia usa la de por defecto', () {
       expect(_nombres(PaletaDibujo.coloresDe(_dibujo('foto_nuevo'))),
-          Ajustes.paletaPorDefecto);
+          AjustesPintar.paletaPorDefecto);
     });
   });
 
@@ -84,7 +85,7 @@ void main() {
     tearDown(() => ModoPintado.cambiar(ModoPintado.total));
 
     test('empieza en el Modo 1 y el elegido queda guardado', () async {
-      expect(Ajustes.modoPorDefecto, ModoPintado.total);
+      expect(AjustesPintar.modoPorDefecto, ModoPintado.total);
       expect(ModoPintado.actual, ModoPintado.total);
       await ModoPintado.cambiar(ModoPintado.porObjeto);
       expect(ModoPintado.actual, ModoPintado.porObjeto);
@@ -272,7 +273,7 @@ void main() {
       final conPez = await Pintura.medirColores(
           d, <Trazo>[_llenar(0, celeste), _llenar(1, naranja)], colores,
           personaje: personaje);
-      expect(conPez!.personaje, greaterThan(Ajustes.personajeTerminado));
+      expect(conPez!.personaje, greaterThan(AjustesPintar.personajeTerminado));
       expect(conPez.enPersonaje[0], greaterThan(0.95));
       expect(conPez.enPersonaje[1], lessThan(0.02));
       expect(conPez.fueraDelPersonaje[0], lessThan(0.01));

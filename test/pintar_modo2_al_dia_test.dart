@@ -1,8 +1,8 @@
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/modo_pintado.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/modo_pintado.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,7 +48,7 @@ void main() {
     expect(paleta.usadoEnResto('Celeste'), isTrue);
     expect(paleta.usadoEnResto('Naranja'), isFalse);
     expect(paleta.personajeTerminado, isFalse);
-    expect(frases, <String>[Ajustes.vozEligeUnColor]);
+    expect(frases, <String>[AjustesPintar.vozEligeUnColor]);
 
     // El celeste no pinta el pez.
     await elegirColor(tester, 2);

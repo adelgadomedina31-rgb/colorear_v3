@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'config.dart';
-import 'models/paleta_dibujo.dart';
-import 'models/pintura.dart';
-import 'pantallas/pantalla_inicio.dart';
-import 'pantallas/pantalla_presentacion.dart';
+import 'package:colorear_ninos/app/ajustes_app.dart';
+import 'package:colorear_ninos/app/menu_juegos.dart';
+import 'package:colorear_ninos/app/presentacion.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
+
+// =============================================================================
+//  AQUÍ ARRANCA LA APP. Normalmente no hace falta tocar este archivo.
+//
+//  El mapa de toda la app está en lib/LEEME.md.
+//  Al abrir: la presentación (lib/app/presentacion.dart) y después el menú
+//  de juegos (lib/app/menu_juegos.dart), que muestra los juegos de
+//  lib/app/lista_juegos.dart.
+// =============================================================================
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +46,8 @@ class _EstadoApp extends State<ColorearApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// Cuando la app se va a segundo plano o se cierra, se guarda lo pintado.
+  /// Cuando la app se va a segundo plano o se cierra, se guarda lo pintado
+  /// (juego Pintar).
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) {
@@ -54,11 +64,11 @@ class _EstadoApp extends State<ColorearApp> with WidgetsBindingObserver {
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xFFFF7043),
-        scaffoldBackgroundColor: Ajustes.fondoApp,
+        scaffoldBackgroundColor: AjustesApp.fondoApp,
       ),
-      home: Ajustes.mostrarPresentacion
-          ? const PantallaPresentacion()
-          : const PantallaInicio(),
+      home: AjustesApp.mostrarPresentacion
+          ? const Presentacion()
+          : const MenuJuegos(),
     );
   }
 }

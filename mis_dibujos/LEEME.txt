@@ -2,7 +2,7 @@ MIS DIBUJOS
 ===========
 
 Pon en esta carpeta las imágenes que quieras que Arleth pinte.
-Cada imagen aparece al PRINCIPIO del menú de la app.
+Cada imagen aparece al PRINCIPIO de los dibujos del juego Pintar.
 
 Qué imágenes sirven:
   - Láminas para colorear: líneas NEGRAS sobre fondo BLANCO.

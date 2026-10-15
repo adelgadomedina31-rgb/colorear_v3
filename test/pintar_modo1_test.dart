@@ -1,6 +1,6 @@
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'ayuda_pintar.dart';
@@ -27,10 +27,11 @@ void main() {
     }
     expect(paleta.recomendado('Rojo'), isTrue);
     await esperar(tester);
-    expect(frases.where((f) => f == Ajustes.vozUsaOtroColor).length, 1);
+    expect(frases.where((f) => f == AjustesPintar.vozUsaOtroColor).length, 1);
     final mitad = await medir(tester, dibujo);
-    expect(mitad.colores[0], greaterThan(Ajustes.parteParaRecomendar - 0.05));
-    expect(mitad.pintado, lessThan(Ajustes.porcentajeCelebracion));
+    expect(mitad.colores[0],
+        greaterThan(AjustesPintar.parteParaRecomendar - 0.05));
+    expect(mitad.pintado, lessThan(AjustesPintar.porcentajeCelebracion));
 
     // El color se soltó y no se eligió otro solo: los colores no se acaban.
     expect(colorElegido(tester), isNull);
@@ -54,7 +55,7 @@ void main() {
     final vecesElegido = await pintarHastaCelebrar(tester, lienzo, dibujo);
     expect(vecesElegido, 1);
     expect(celebracion, findsOneWidget);
-    expect(frases, isNot(contains(Ajustes.vozUsaOtroColor)));
+    expect(frases, isNot(contains(AjustesPintar.vozUsaOtroColor)));
     await quitarCelebracion(tester);
     await cerrarPantalla(tester);
   });

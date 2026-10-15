@@ -1,8 +1,8 @@
-import 'package:colorear_ninos/config.dart';
-import 'package:colorear_ninos/models/dibujo.dart';
-import 'package:colorear_ninos/models/modo_pintado.dart';
-import 'package:colorear_ninos/models/paleta_dibujo.dart';
-import 'package:colorear_ninos/models/pintura.dart';
+import 'package:colorear_ninos/juegos/pintar/pintar_ajustes.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/modo_pintado.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/paleta_dibujo.dart';
+import 'package:colorear_ninos/juegos/pintar/partes/pintura.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -90,14 +90,16 @@ void main() {
     }
     await esperar(tester);
     expect(paleta.personajeTerminado, isTrue, reason: '$toques toques');
-    expect(frases, contains(Ajustes.vozEligeOtroParaSeguir));
+    expect(frases, contains(AjustesPintar.vozEligeOtroParaSeguir));
     expect(colorElegido(tester), isNull);
     expect(hayTarritoElegido(), isFalse);
     expect(celebracion, findsNothing);
     final medida = await medir(tester, pez, personaje: <int>{
-      for (final parte in Ajustes.personajes['pez']!.partes) zona(pez, parte),
+      for (final parte in AjustesPintar.personajes['pez']!.partes)
+        zona(pez, parte),
     });
-    expect(medida.personaje, greaterThanOrEqualTo(Ajustes.personajeTerminado));
+    expect(medida.personaje,
+        greaterThanOrEqualTo(AjustesPintar.personajeTerminado));
     expect(medida.enPersonaje[0], greaterThan(0.9));
 
     // Si vuelve al naranja, no pinta el agua...
@@ -105,7 +107,7 @@ void main() {
     frases.clear();
     await tocar(tester, lienzo, pez, puntosDe(pez, 'agua').last);
     expect(await pintadoEn(tester, pez, puntosDe(pez, 'agua').last), 0);
-    expect(frases, <String>[Ajustes.vozEligeOtroParaSeguir]);
+    expect(frases, <String>[AjustesPintar.vozEligeOtroParaSeguir]);
     // ...pero sí puede retocar el pez.
     await esperarHorneado(tester);
     final antes = Pintura.completa('pez');

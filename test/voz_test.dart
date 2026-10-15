@@ -1,4 +1,4 @@
-import 'package:colorear_ninos/servicios/voz.dart';
+import 'package:colorear_ninos/comun/voz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -23,6 +23,16 @@ CÓMO GRABAR
 
 NOMBRES DE LOS ARCHIVOS
 -----------------------
+En el menú de juegos (al tocar cada tarjeta):
+   a_pintar.m4a         ->  "¡A pintar!"
+   los_colores.m4a      ->  "¡Los colores!"
+   los_animales.m4a     ->  "¡Los animales!"
+   (Si cambias lo que dice la voz en lib/app/lista_juegos.dart, el nombre
+   del archivo es ese texto sin signos, sin tildes y con _ en vez de
+   espacios.)
+
+PINTAR
+
 Al elegir un color (solo el nombre, alegre: "¡Rojo!"):
    rojo.m4a  naranja.m4a  amarillo.m4a  verde.m4a  celeste.m4a  azul.m4a
    morado.m4a  rosado.m4a  marron.m4a  gris.m4a  negro.m4a
@@ -37,18 +47,25 @@ Frases:
         (Modo 2, cuando termina de pintar el personaje)
    felicidades.m4a      ->  "¡Felicidades! ¡Lo pintaste muy bien!"
 
-Las frases del Modo 2 que nombran al personaje ("¡Pinta el pez con el
+COLORES (el juego de los globos)
+
+   toca_el_globo.m4a    ->  "¡Toca el globo...!" (y después se escucha la
+                            grabación del color: rojo.m4a, azul.m4a...)
+        Solo se usa si están las dos: toca_el_globo y la del color.
+
+Las demás frases de Colores y Animales ("¡Muy bien! ¡Es el rojo!",
+"¿Quién hace guau guau?"...) las dice la voz del celular, porque cambian
+con cada ronda. Los sonidos de verdad de los animales van en otra carpeta:
+assets/sonidos/animales/ (ver su LEEME.txt).
+
+Las frases del Modo 2 de Pintar que nombran al personaje ("¡Pinta el pez con el
 naranja!", "¡Este color es para el pez!", "¡Elige otro color para el pez!")
 las dice siempre la voz del celular, porque cambian con cada dibujo.
 
-Si grabaste frases para la versión 8, estas ya no se usan y las puedes
-borrar: se_acabo_el_color, se_acabaron_todos, elige_otro_color y
-ya_no_quedan_colores.
-
 (Los ejemplos dicen .m4a, pero puede ser .mp3 u otro de los de arriba.)
 
-Para dejar de usar las grabaciones sin borrarlas: en lib/config.dart pon
-usarVocesGrabadas = false.
+Para dejar de usar las grabaciones sin borrarlas: en
+lib/app/ajustes_app.dart pon usarVocesGrabadas = false.
 
 NO borres este archivo LEEME.txt: la carpeta tiene que existir para que la
 app se pueda compilar.
