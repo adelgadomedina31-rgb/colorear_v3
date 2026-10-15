@@ -304,7 +304,13 @@ class Dibujante {
 
 /// Lo que midió [Pintura.medirColores].
 class Medida {
-  const Medida(this.colores, this.pintado);
+  const Medida(
+    this.colores,
+    this.pintado, {
+    this.personaje = 0,
+    this.enPersonaje = const <double>[],
+    this.fueraDelPersonaje = const <double>[],
+  });
 
   /// Qué parte del dibujo (0 a 1) cubre cada color, en el mismo orden que
   /// los colores que se pidieron medir.
@@ -312,6 +318,16 @@ class Medida {
 
   /// Qué parte del dibujo (0 a 1) está pintada, con cualquier color.
   final double pintado;
+
+  /// Qué parte del personaje (0 a 1) está pintada, con cualquier color
+  /// (0 si no se pidió medir un personaje).
+  final double personaje;
+
+  /// Qué parte del personaje (0 a 1) cubre cada color.
+  final List<double> enPersonaje;
+
+  /// Qué parte del dibujo (0 a 1) cubre cada color fuera del personaje.
+  final List<double> fueraDelPersonaje;
 }
 
 /// Lo que se ha pintado de cada dibujo.
@@ -604,6 +620,7 @@ class Pintura {
     _miniaturas.remove(id)?.dispose();
     _sucios.remove(id);
     _pintables.remove(id);
+    _mascaras.removeWhere((clave, _) => clave.startsWith('$id|'));
     PaletaDibujo.olvidar(id);
     cambios.value++;
     _enCola((carpeta) async {
@@ -632,21 +649,30 @@ class Pintura {
     return n / (_ladoMedida * _ladoMedida);
   }
 
+  /// Qué puntos (de 200 x 200) son del personaje de cada dibujo.
+  static final Map<String, _Mascara> _mascaras = <String, _Mascara>{};
+
   /// Mide qué parte de lo que se puede pintar del dibujo cubre cada uno de
   /// [colores], y cuánto está pintado en total (con cualquier color).
+  /// Si se le dan las zonas del [personaje], mide también cuánto del
+  /// personaje está pintado y qué colores hay dentro y fuera de él.
   /// Cuenta lo ya pintado y también las manchas [activos] que se están
   /// pintando (como si ya hubieran terminado de derramarse).
   /// Devuelve null si no se pudo medir. Nunca lanza errores.
   static Future<Medida?> medirColores(
     Dibujo d,
     List<Trazo> activos,
-    List<Color> colores,
-  ) async {
+    List<Color> colores, {
+    Set<int> personaje = const <int>{},
+  }) async {
     try {
       final total = await _contarPintables(d);
+      final mascara =
+          personaje.isEmpty ? null : await _mascaraPersonaje(d, personaje);
       final base = _completas[d.id];
       if (base == null && activos.isEmpty) {
-        return Medida(List<double>.filled(colores.length, 0.0), 0);
+        final ceros = List<double>.filled(colores.length, 0.0);
+        return Medida(ceros, 0, enPersonaje: ceros, fueraDelPersonaje: ceros);
       }
       // Lo pintado (en chiquito) y encima las manchas que se están pintando.
       const lado = _ladoMedida;
@@ -666,7 +692,7 @@ class Pintura {
       }
       final pixeles = await _leerPixeles(grabadora.endRecording(), lado);
       if (pixeles == null) return null;
-      return _contarColores(pixeles, colores, total);
+      return _contarColores(pixeles, colores, total, mascara);
     } catch (_) {
       return null;
     }
@@ -679,6 +705,7 @@ class Pintura {
     Uint8List pixeles,
     List<Color> colores,
     int total,
+    _Mascara? mascara,
   ) {
     final n = colores.length;
     final rojos = List<int>.filled(n, 0);
@@ -691,10 +718,17 @@ class Pintura {
       azules[k] = argb & 0xFF;
     }
     final cuentas = List<int>.filled(n, 0);
+    final adentro = List<int>.filled(n, 0);
+    final puntos = mascara?.puntos;
     var pintados = 0;
+    var pintadosPersonaje = 0;
     for (var i = 0; i + 3 < pixeles.length; i += 4) {
       final alfa = pixeles[i + 3];
-      if (alfa >= 128) pintados++;
+      final delPersonaje = puntos != null && puntos[i >> 2] != 0;
+      if (alfa >= 128) {
+        pintados++;
+        if (delPersonaje) pintadosPersonaje++;
+      }
       if (alfa < 250) continue; // sin pintar (o un borde)
       final r = pixeles[i];
       final g = pixeles[i + 1];
@@ -710,13 +744,58 @@ class Pintura {
           mejor = k;
         }
       }
-      if (mejor >= 0) cuentas[mejor]++;
+      if (mejor >= 0) {
+        cuentas[mejor]++;
+        if (delPersonaje) adentro[mejor]++;
+      }
     }
     final divisor = total > 0 ? total : _ladoMedida * _ladoMedida;
+    final enPersonaje = mascara?.cantidad ?? 0;
     return Medida(
       <double>[for (final c in cuentas) c / divisor],
       math.min(1.0, pintados / divisor),
+      personaje:
+          enPersonaje > 0 ? math.min(1.0, pintadosPersonaje / enPersonaje) : 0,
+      enPersonaje: <double>[
+        for (final c in adentro) enPersonaje > 0 ? c / enPersonaje : 0.0,
+      ],
+      fueraDelPersonaje: <double>[
+        for (var k = 0; k < n; k++) (cuentas[k] - adentro[k]) / divisor,
+      ],
     );
+  }
+
+  /// Los puntos (en chiquito) que son del personaje: la parte que se ve de
+  /// sus zonas (sin lo que tapan las zonas de encima). Se calcula una sola
+  /// vez por dibujo.
+  static Future<_Mascara?> _mascaraPersonaje(Dibujo d, Set<int> zonas) async {
+    final clave = '${d.id}|${(zonas.toList()..sort()).join(',')}';
+    final hecha = _mascaras[clave];
+    if (hecha != null) return hecha;
+    const lado = _ladoMedida;
+    final grabadora = PictureRecorder();
+    final canvas = Canvas(grabadora);
+    canvas.saveLayer(Dibujante._cuadro(lado), Paint());
+    canvas.scale(lado / d.lado, lado / d.lado);
+    final suya = Paint()..color = const Color(0xFFFFFFFF);
+    final otra = Paint()..blendMode = BlendMode.clear;
+    for (var i = 0; i < d.regiones.length; i++) {
+      canvas.drawPath(d.regiones[i].path, zonas.contains(i) ? suya : otra);
+    }
+    canvas.restore();
+    final pixeles = await _leerPixeles(grabadora.endRecording(), lado);
+    if (pixeles == null) return null;
+    final puntos = Uint8List(lado * lado);
+    var cantidad = 0;
+    for (var k = 0; k < puntos.length; k++) {
+      if (pixeles[k * 4 + 3] >= 128) {
+        puntos[k] = 1;
+        cantidad++;
+      }
+    }
+    final mascara = _Mascara(puntos, cantidad);
+    _mascaras[clave] = mascara;
+    return mascara;
   }
 
   /// Cuántos puntos del dibujo (en chiquito) se pueden pintar: los que están
@@ -839,4 +918,12 @@ class Pintura {
     final limpio = id.replaceAll(RegExp(r'[^A-Za-z0-9_\-]'), '_');
     return '${carpeta.path}${Platform.pathSeparator}$limpio.$extension';
   }
+}
+
+/// Los puntos del personaje de un dibujo (1 = del personaje), en chiquito.
+class _Mascara {
+  const _Mascara(this.puntos, this.cantidad);
+
+  final Uint8List puntos;
+  final int cantidad;
 }

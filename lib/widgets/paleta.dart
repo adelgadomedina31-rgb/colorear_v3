@@ -5,21 +5,19 @@ import 'package:flutter/material.dart';
 import '../config.dart';
 
 /// Los colores del dibujo: tarritos redondos de pintura sobre una bandeja
-/// blanca, en una sola fila (cada dibujo tiene como mucho 5 colores). Cada
-/// tarrito muestra cuánta pintura le queda.
+/// blanca, en una sola fila (cada dibujo tiene como mucho 5 colores). Los
+/// colores no se acaban.
 ///
 /// - El elegido se agranda, rebota y muestra una estrellita.
-/// - Un color que se acabó se encoge y desaparece de la bandeja.
-/// - Si se acabaron todos, la bandeja muestra una estrella y "¡Muy bien!".
+/// - Si no hay ninguno elegido, los tarritos saltan uno tras otro, como
+///   diciendo "¡elígeme!".
 /// - Mientras la voz habla, la paleta queda [bloqueada].
-class Paleta extends StatelessWidget {
+class Paleta extends StatefulWidget {
   const Paleta({
     super.key,
     required this.colores,
     required this.seleccionado,
     required this.alElegir,
-    required this.niveles,
-    required this.acabados,
     this.bloqueada = false,
     this.cargando = false,
   });
@@ -27,16 +25,10 @@ class Paleta extends StatelessWidget {
   /// Los colores del dibujo (como mucho 5).
   final List<ColorConNombre> colores;
 
-  /// El color elegido (null si no queda ninguno).
+  /// El color elegido (null si no hay ninguno).
   final ColorConNombre? seleccionado;
 
   final ValueChanged<ColorConNombre> alElegir;
-
-  /// Pintura que le queda a cada color (0 a 1), en el mismo orden.
-  final List<double> niveles;
-
-  /// Nombres de los colores que ya se acabaron en este dibujo.
-  final Set<String> acabados;
 
   final bool bloqueada;
 
@@ -44,7 +36,57 @@ class Paleta extends StatelessWidget {
   final bool cargando;
 
   @override
+  State<Paleta> createState() => _EstadoPaleta();
+}
+
+class _EstadoPaleta extends State<Paleta> with SingleTickerProviderStateMixin {
+  /// Los saltitos de "¡elígeme!" (una vuelta cada 1,6 segundos).
+  late final AnimationController _saltos = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  );
+
+  bool get _pideColor =>
+      widget.seleccionado == null && !widget.cargando && !widget.bloqueada;
+
+  @override
+  void initState() {
+    super.initState();
+    _actualizarSaltos();
+  }
+
+  @override
+  void didUpdateWidget(covariant Paleta anterior) {
+    super.didUpdateWidget(anterior);
+    _actualizarSaltos();
+  }
+
+  void _actualizarSaltos() {
+    if (_pideColor) {
+      if (!_saltos.isAnimating) _saltos.repeat();
+    } else if (_saltos.isAnimating || _saltos.value != 0) {
+      _saltos.stop();
+      _saltos.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _saltos.dispose();
+    super.dispose();
+  }
+
+  /// Cuánto sube el tarrito [i] ahora (0 a 1): una ola que pasa de
+  /// izquierda a derecha, con una pausa entre ola y ola.
+  double _salto(int i) {
+    final fase = _saltos.value * 1.6 - i * 0.12;
+    if (fase < 0 || fase > 0.35) return 0;
+    return math.sin(fase / 0.35 * math.pi);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colores = widget.colores;
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
       decoration: BoxDecoration(
@@ -66,118 +108,37 @@ class Paleta extends StatelessWidget {
           final ranura =
               (restricciones.maxWidth / cupo).clamp(44.0, 90.0).toDouble();
           final tamano = (ranura / 1.22).clamp(36.0, 72.0).toDouble();
-          final quedan =
-              colores.where((c) => !acabados.contains(c.nombre)).length;
-          if (!cargando && colores.isNotEmpty && quedan == 0) {
-            return SizedBox(
-              width: restricciones.maxWidth,
-              height: ranura,
-              child: const Center(child: _MuyBien()),
-            );
-          }
+          if (widget.cargando) return SizedBox(height: ranura);
           return SizedBox(
             height: ranura,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < colores.length; i++)
-                  _Ranura(
-                    ancho: ranura,
-                    visible: !cargando && !acabados.contains(colores[i].nombre),
-                    child: _Tarrito(
-                      color: colores[i].color,
-                      tamano: tamano,
-                      nivel: i < niveles.length ? niveles[i] : 1.0,
-                      elegido: colores[i].color == seleccionado?.color,
-                      apagado:
-                          bloqueada && colores[i].color != seleccionado?.color,
-                      alTocar: (bloqueada ||
-                              cargando ||
-                              acabados.contains(colores[i].nombre))
-                          ? null
-                          : () => alElegir(colores[i]),
+            child: AnimatedBuilder(
+              animation: _saltos,
+              builder: (context, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < colores.length; i++)
+                    SizedBox(
+                      width: ranura,
+                      child: Transform.translate(
+                        offset: Offset(0, -tamano * 0.16 * _salto(i)),
+                        child: _Tarrito(
+                          color: colores[i].color,
+                          tamano: tamano,
+                          elegido:
+                              colores[i].color == widget.seleccionado?.color,
+                          apagado: widget.bloqueada &&
+                              colores[i].color != widget.seleccionado?.color,
+                          alTocar: widget.bloqueada
+                              ? null
+                              : () => widget.alElegir(colores[i]),
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// El lugar de un tarrito en la fila. Cuando el color se acaba, el tarrito
-/// se encoge y su lugar se cierra (los demás se juntan).
-class _Ranura extends StatelessWidget {
-  const _Ranura({
-    required this.ancho,
-    required this.visible,
-    required this.child,
-  });
-
-  final double ancho;
-  final bool visible;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(end: visible ? 1.0 : 0.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
-      child: child,
-      builder: (context, t, hijo) {
-        if (t <= 0.01) return const SizedBox.shrink();
-        return SizedBox(
-          width: ancho * t,
-          height: ancho,
-          child: OverflowBox(
-            minWidth: ancho,
-            maxWidth: ancho,
-            child: Transform.scale(
-              scale: t,
-              child:
-                  Opacity(opacity: t.clamp(0.0, 1.0).toDouble(), child: hijo),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Lo que muestra la bandeja cuando se acabaron todos los colores.
-class _MuyBien extends StatelessWidget {
-  const _MuyBien();
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.3, end: 1.0),
-      duration: const Duration(milliseconds: 700),
-      curve: Curves.elasticOut,
-      builder: (context, escala, hijo) =>
-          Transform.scale(scale: escala, child: hijo),
-      child: const FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star_rounded, color: Color(0xFFFDD835), size: 52),
-            SizedBox(width: 8),
-            Text(
-              '¡Muy bien!',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFFFB8C00),
-              ),
-            ),
-            SizedBox(width: 8),
-            Icon(Icons.star_rounded, color: Color(0xFFFDD835), size: 52),
-          ],
-        ),
       ),
     );
   }
@@ -187,7 +148,6 @@ class _Tarrito extends StatelessWidget {
   const _Tarrito({
     required this.color,
     required this.tamano,
-    required this.nivel,
     required this.elegido,
     required this.apagado,
     required this.alTocar,
@@ -195,7 +155,6 @@ class _Tarrito extends StatelessWidget {
 
   final Color color;
   final double tamano;
-  final double nivel;
   final bool elegido;
   final bool apagado;
   final VoidCallback? alTocar;
@@ -221,28 +180,19 @@ class _Tarrito extends StatelessWidget {
               child: SizedBox(
                 width: tamano,
                 height: tamano,
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(end: nivel),
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeOut,
-                  builder: (context, nivelAnimado, _) => CustomPaint(
-                    painter: _PintorTarrito(
-                      color: color,
-                      nivel: nivelAnimado,
-                      elegido: elegido,
-                    ),
-                    child: Center(
-                      child: elegido
-                          ? Icon(
-                              Icons.star_rounded,
-                              color: Colors.white,
-                              size: tamano * 0.5,
-                              shadows: const <Shadow>[
-                                Shadow(color: Color(0x66000000), blurRadius: 4),
-                              ],
-                            )
-                          : null,
-                    ),
+                child: CustomPaint(
+                  painter: _PintorTarrito(color: color, elegido: elegido),
+                  child: Center(
+                    child: elegido
+                        ? Icon(
+                            Icons.star_rounded,
+                            color: Colors.white,
+                            size: tamano * 0.5,
+                            shadows: const <Shadow>[
+                              Shadow(color: Color(0x66000000), blurRadius: 4),
+                            ],
+                          )
+                        : null,
                   ),
                 ),
               ),
@@ -254,17 +204,11 @@ class _Tarrito extends StatelessWidget {
   }
 }
 
-/// Dibuja un tarrito redondo: vidrio clarito, la pintura adentro hasta el
-/// [nivel] (con la superficie ondulada) y un brillo.
+/// Dibuja un tarrito redondo lleno de pintura, con un brillo de vidrio.
 class _PintorTarrito extends CustomPainter {
-  _PintorTarrito({
-    required this.color,
-    required this.nivel,
-    required this.elegido,
-  });
+  _PintorTarrito({required this.color, required this.elegido});
 
   final Color color;
-  final double nivel;
   final bool elegido;
 
   Color _tono(double cambio) {
@@ -293,40 +237,18 @@ class _PintorTarrito extends CustomPainter {
         ..color = const Color(0x33000000)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
-    // Vidrio (tarrito vacío).
-    canvas.drawCircle(centro, radio, Paint()..color = _tono(0.38));
-
-    // Pintura adentro, hasta el nivel.
-    final n = nivel.clamp(0.0, 1.0).toDouble();
-    if (n > 0.001) {
-      canvas.save();
-      canvas.clipPath(Path()..addOval(circulo));
-      final superficie = circulo.bottom - circulo.height * n;
-      final ola = radio * 0.08 * (n < 0.98 ? 1.0 : 0.0);
-      final liquido = Path()..moveTo(circulo.left, superficie);
-      const pasos = 16;
-      for (var k = 0; k <= pasos; k++) {
-        final x = circulo.left + circulo.width * k / pasos;
-        final y = superficie + ola * math.sin(k / pasos * 2 * math.pi * 1.5);
-        liquido.lineTo(x, y);
-      }
-      liquido
-        ..lineTo(circulo.right, circulo.bottom)
-        ..lineTo(circulo.left, circulo.bottom)
-        ..close();
-      canvas.drawPath(
-        liquido,
-        Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.35, -0.4),
-            radius: 0.95,
-            colors: <Color>[_tono(0.18), color, oscuro],
-            stops: const <double>[0.0, 0.55, 1.0],
-          ).createShader(circulo),
-      );
-      canvas.restore();
-    }
-
+    // La pintura.
+    canvas.drawCircle(
+      centro,
+      radio,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.4),
+          radius: 0.95,
+          colors: <Color>[_tono(0.18), color, oscuro],
+          stops: const <double>[0.0, 0.55, 1.0],
+        ).createShader(circulo),
+    );
     // Borde.
     canvas.drawCircle(
       centro,
@@ -348,7 +270,5 @@ class _PintorTarrito extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PintorTarrito oldDelegate) =>
-      oldDelegate.color != color ||
-      oldDelegate.nivel != nivel ||
-      oldDelegate.elegido != elegido;
+      oldDelegate.color != color || oldDelegate.elegido != elegido;
 }

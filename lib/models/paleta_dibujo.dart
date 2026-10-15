@@ -1,35 +1,38 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
 import 'dibujo.dart';
 
-/// La paleta de UN dibujo: qué colores tiene y cuánto pintó cada uno.
+/// La paleta de UN dibujo: qué colores tiene y lo que hay que recordar de
+/// cómo se fue pintando. Los colores no se acaban en ningún modo.
 ///
 /// - Cada dibujo tiene sus propios colores (como mucho 5, ver config.dart).
-/// - Cada color puede pintar como mucho [Ajustes.limitePorColor] del dibujo
-///   (el 70%). Lo que cuenta es cuánto del dibujo llegó a cubrir ese color:
-///   pintar encima de algo que ya es de ese mismo color no gasta más.
-/// - Cuando un color llega al límite se acaba: desaparece de la paleta de ese
-///   dibujo y no vuelve hasta que se borre lo pintado.
-/// - Cada dibujo guarda su paleta aparte, en el celular. Un dibujo sin pintar
-///   empieza con la paleta completa, y uno ya pintado aparece como se dejó.
-/// - También recuerda si ya salió la celebración de ese dibujo (sale una
-///   sola vez, hasta que se borre lo pintado).
-class PaletaDibujo extends ChangeNotifier {
+/// - Modo 1 ("Pintado total"): recuerda a qué colores ya se les recomendó
+///   cambiar (cuando cubrieron la mitad del dibujo), para no repetirlo.
+/// - Modo 2 ("Pintado por objeto"): recuerda el color del personaje y los
+///   colores que se usaron en el resto del dibujo.
+/// - También recuerda si ya salió la celebración (sale una sola vez).
+/// - Cada dibujo guarda lo suyo aparte, en el celular. Borrar lo pintado lo
+///   deja todo como nuevo.
+class PaletaDibujo {
   PaletaDibujo._(this.id);
 
   final String id;
 
-  /// La mayor parte del dibujo (0 a 1) que llegó a cubrir cada color.
-  final Map<String, double> _gasto = <String, double>{};
+  /// Modo 1: colores a los que ya se les recomendó cambiar.
+  final Set<String> _recomendados = <String>{};
 
-  /// Colores que ya se acabaron en este dibujo.
-  final Set<String> _acabados = <String>{};
+  /// Modo 2: el color del personaje (null si todavía no se pintó).
+  String? _colorPersonaje;
+
+  /// Modo 2: colores que se usaron fuera del personaje.
+  final Set<String> _coloresResto = <String>{};
+
+  /// Modo 2: true si ya se avisó que el personaje está terminado.
+  bool _personajeTerminado = false;
 
   bool _celebrado = false;
 
@@ -38,16 +41,13 @@ class PaletaDibujo extends ChangeNotifier {
   static Timer? _temporizador;
   static const String _prefijo = 'paleta_';
 
-  /// Un color se da por acabado un poquito antes del límite exacto, para que
-  /// las últimas gotas no se hagan eternas.
-  static const double _tolerancia = 0.015;
-
   // ------------------------------------------------------- colores del dibujo
 
-  /// Los colores de [d], en orden (el primero queda elegido al entrar).
-  /// Se buscan en config.dart ([Ajustes.paletasDibujos]), después en el
-  /// propio dibujo (campo "colores" del JSON) y si no, se usan los de
-  /// [Ajustes.paletaPorDefecto].
+  /// Los colores de [d], en orden. Se buscan en config.dart
+  /// ([Ajustes.paletasDibujos]), después en el propio dibujo (campo
+  /// "colores" del JSON) y si no, se usan los de [Ajustes.paletaPorDefecto].
+  /// Siempre hay al menos 2 (para poder cambiar de color): si el dibujo
+  /// trae uno solo, se completa con los de por defecto.
   static List<ColorConNombre> coloresDe(Dibujo d) {
     for (final nombres in <List<String>>[
       Ajustes.paletasDibujos[d.id] ?? const <String>[],
@@ -55,7 +55,12 @@ class PaletaDibujo extends ChangeNotifier {
       Ajustes.paletaPorDefecto,
     ]) {
       final lista = _buscar(nombres);
-      if (lista.isNotEmpty) return lista;
+      if (lista.isEmpty) continue;
+      for (final otro in _buscar(Ajustes.paletaPorDefecto)) {
+        if (lista.length >= 2) break;
+        if (!lista.contains(otro)) lista.add(otro);
+      }
+      return lista;
     }
     return Ajustes.colores.take(Ajustes.maxColoresPorDibujo).toList();
   }
@@ -88,63 +93,43 @@ class PaletaDibujo extends ChangeNotifier {
     return salida.toString();
   }
 
-  // ------------------------------------------------------------------ estado
+  // ------------------------------------------------------------ modo 1
 
-  /// Cuánto del dibujo llegó a cubrir el color (0 a 1).
-  double gasto(String nombre) => _gasto[nombre] ?? 0;
+  /// true si a [nombre] ya se le recomendó cambiar en este dibujo.
+  bool recomendado(String nombre) => _recomendados.contains(nombre);
 
-  bool acabado(String nombre) => _acabados.contains(nombre);
-
-  /// Lo que le queda al tarrito del color: 1 = lleno, 0 = vacío.
-  double nivel(String nombre) {
-    if (acabado(nombre)) return 0;
-    return (1 - gasto(nombre) / Ajustes.limitePorColor)
-        .clamp(0.0, 1.0)
-        .toDouble();
+  void marcarRecomendado(String nombre) {
+    if (_recomendados.add(nombre)) _marcarCambio();
   }
 
-  /// Cuánto más del dibujo puede pintar el color (0 a 1).
-  double margen(String nombre) {
-    if (acabado(nombre)) return 0;
-    return math.max(0.0, Ajustes.limitePorColor - gasto(nombre));
+  // ------------------------------------------------------------ modo 2
+
+  /// El color del personaje (null si todavía no se pintó).
+  String? get colorPersonaje => _colorPersonaje;
+
+  void fijarColorPersonaje(String nombre) {
+    if (_colorPersonaje == nombre) return;
+    _colorPersonaje = nombre;
+    _marcarCambio();
   }
 
-  /// Los colores de [colores] que todavía no se acabaron.
-  List<ColorConNombre> disponibles(List<ColorConNombre> colores) =>
-      <ColorConNombre>[
-        for (final c in colores)
-          if (!acabado(c.nombre)) c,
-      ];
+  /// true si [nombre] se usó fuera del personaje.
+  bool usadoEnResto(String nombre) => _coloresResto.contains(nombre);
 
-  /// Anota cuánto del dibujo cubre ahora cada color ([cobertura] va en el
-  /// mismo orden que [colores]). Devuelve los colores que se acabaron justo
-  /// con esta medición.
-  List<ColorConNombre> actualizar(
-    List<ColorConNombre> colores,
-    List<double> cobertura,
-  ) {
-    final recienAcabados = <ColorConNombre>[];
-    var cambio = false;
-    for (var i = 0; i < colores.length && i < cobertura.length; i++) {
-      final nombre = colores[i].nombre;
-      if (_acabados.contains(nombre)) continue;
-      final ahora = cobertura[i];
-      if (ahora > gasto(nombre) + 0.002) {
-        _gasto[nombre] = ahora;
-        cambio = true;
-      }
-      if (gasto(nombre) >= Ajustes.limitePorColor - _tolerancia) {
-        _acabados.add(nombre);
-        recienAcabados.add(colores[i]);
-        cambio = true;
-      }
-    }
-    if (cambio) {
-      _marcarCambio();
-      notifyListeners();
-    }
-    return recienAcabados;
+  void usarEnResto(String nombre) {
+    if (_coloresResto.add(nombre)) _marcarCambio();
   }
+
+  /// true si ya se avisó que el personaje está terminado.
+  bool get personajeTerminado => _personajeTerminado;
+
+  void marcarPersonajeTerminado() {
+    if (_personajeTerminado) return;
+    _personajeTerminado = true;
+    _marcarCambio();
+  }
+
+  // ------------------------------------------------------------ celebración
 
   /// true si ya salió la celebración de este dibujo.
   bool get celebrado => _celebrado;
@@ -161,7 +146,7 @@ class PaletaDibujo extends ChangeNotifier {
   /// La paleta de [id] si ya se leyó (si no, null).
   static PaletaDibujo? enMemoria(String id) => _memoria[id];
 
-  /// Lee la paleta guardada de [id] (completa si nunca se pintó).
+  /// Lee la paleta guardada de [id] (como nueva si nunca se pintó).
   static Future<PaletaDibujo> cargar(String id) async {
     final hay = _memoria[id];
     if (hay != null) return hay;
@@ -171,7 +156,7 @@ class PaletaDibujo extends ChangeNotifier {
       final texto = prefs.getString('$_prefijo$id');
       if (texto != null) nueva._leer(texto);
     } catch (_) {
-      // Si no se pudo leer, se empieza con la paleta completa.
+      // Si no se pudo leer, se empieza como nueva.
     }
     // Mientras se leía pudo leerse o borrarse otra vez: gana la que ya está.
     return _memoria.putIfAbsent(id, () => nueva);
@@ -185,7 +170,7 @@ class PaletaDibujo extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Deja la paleta de [id] completa otra vez y borra lo guardado
+  /// Deja la paleta de [id] como nueva y borra lo guardado
   /// (se llama al borrar lo pintado).
   static void olvidar(String id) {
     final vieja = _memoria[id];
@@ -227,34 +212,39 @@ class PaletaDibujo extends ChangeNotifier {
   }
 
   String _aTexto() => jsonEncode(<String, Object>{
-        'gasto': _gasto,
-        'acabados': _acabados.toList(),
+        'recomendados': _recomendados.toList(),
+        if (_colorPersonaje != null) 'colorPersonaje': _colorPersonaje!,
+        'coloresResto': _coloresResto.toList(),
+        if (_personajeTerminado) 'personajeTerminado': true,
         if (_celebrado) 'celebrado': true,
       });
 
+  /// Lee lo guardado. Lo de versiones anteriores (cuánto se gastó cada color)
+  /// ya no se usa: los colores ya no se acaban.
   void _leer(String texto) {
     try {
       final datos = jsonDecode(texto);
       if (datos is! Map) return;
-      final gasto = datos['gasto'];
-      if (gasto is Map) {
-        gasto.forEach((nombre, valor) {
-          if (nombre is String && valor is num)
-            _gasto[nombre] = valor.toDouble();
-        });
-      }
-      final acabados = datos['acabados'];
-      if (acabados is List) {
-        for (final nombre in acabados) {
-          if (nombre is String) _acabados.add(nombre);
-        }
-      }
+      _leerLista(datos['recomendados'], _recomendados);
+      final personaje = datos['colorPersonaje'];
+      if (personaje is String) _colorPersonaje = personaje;
+      _leerLista(datos['coloresResto'], _coloresResto);
+      _personajeTerminado = datos['personajeTerminado'] == true;
       _celebrado = datos['celebrado'] == true;
     } catch (_) {
-      // Datos dañados: se empieza con la paleta completa.
-      _gasto.clear();
-      _acabados.clear();
+      // Datos dañados: se empieza como nueva.
+      _recomendados.clear();
+      _colorPersonaje = null;
+      _coloresResto.clear();
+      _personajeTerminado = false;
       _celebrado = false;
+    }
+  }
+
+  static void _leerLista(Object? lista, Set<String> destino) {
+    if (lista is! List) return;
+    for (final nombre in lista) {
+      if (nombre is String) destino.add(nombre);
     }
   }
 }

@@ -166,7 +166,7 @@ class Voz {
 
   // ------------------------------------------------------- voces grabadas
 
-  /// "Se acabó el color" -> "se_acabo_el_color"; "Marrón" -> "marron".
+  /// "Elige un color" -> "elige_un_color"; "Marrón" -> "marron".
   static String clave(String texto) {
     const conTilde = 'áéíóúüñ';
     const sinTilde = 'aeiouun';
@@ -259,7 +259,7 @@ class Voz {
   /// Nunca se queda esperando para siempre.
   ///
   /// [grabaciones] son los nombres de las grabaciones que dicen lo mismo,
-  /// en orden (por ejemplo `['se_acabo_el_color', 'rojo']`). Si están
+  /// en orden (por ejemplo `['usa_otro_color']`). Si están
   /// todas en assets/voces/, se escuchan esas en vez de la voz del celular.
   static Future<void> decir(
     String texto, {

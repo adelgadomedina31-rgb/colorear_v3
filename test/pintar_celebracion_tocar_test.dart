@@ -13,15 +13,7 @@ void main() {
     final dibujo = cuadrado('tocar');
     final lienzo = await abrirPantalla(tester, <Dibujo>[dibujo]);
     final fiesta = celebracion;
-    var toques = 0;
-    while (fiesta.evaluate().isEmpty && toques < 300) {
-      final x = 100.0 + 200 * (toques % 5);
-      final y = 100.0 + 200 * ((toques ~/ 5) % 5);
-      await tester.tapAt(lienzo.topLeft +
-          Offset(lienzo.width * x / 1000, lienzo.height * y / 1000));
-      toques++;
-      await esperar(tester, vueltas: 3);
-    }
+    await pintarHastaCelebrar(tester, lienzo, dibujo);
     expect(fiesta, findsOneWidget);
     // Un toque apurado justo al aparecer no la quita.
     await tester.tap(fiesta);

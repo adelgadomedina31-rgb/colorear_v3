@@ -8,6 +8,19 @@ class ColorConNombre {
   final String nombre;
 }
 
+/// El personaje de un dibujo, para el "Modo 2 - Pintado por objeto":
+/// sus [partes] (los "id" de sus zonas) se pintan todas de un solo color,
+/// y ese color no se puede usar en el resto del dibujo.
+class Personaje {
+  const Personaje(this.nombre, this.partes);
+
+  /// Cómo lo nombra la voz, con su artículo: "el sol", "las alas"...
+  final String nombre;
+
+  /// Las zonas del personaje.
+  final List<String> partes;
+}
+
 /// Ajustes de la app. Cambia estos valores para afinar cómo se siente.
 ///
 /// Los dibujos se definen en un cuadrado de 1000 x 1000 unidades; las medidas
@@ -37,10 +50,6 @@ class Ajustes {
   /// Límites para el tamaño (radio) de cada mancha.
   static const double radioMinimo = 80;
   static const double radioMaximo = 310;
-
-  /// Cuando a un color le queda poca pintura, sus manchas salen más chicas;
-  /// este es el tamaño (radio) de la mancha más chica, la "última gota".
-  static const double radioUltimaGota = 45;
 
   /// Cuánto tarda la pintura en "derramarse" hasta su tamaño final
   /// (milisegundos).
@@ -111,25 +120,141 @@ class Ajustes {
   /// voz termine antes. La paleta también espera a que la voz termine.
   static const int pausaMinimaColor = 700;
 
-  // ------------------------------------------------- paleta de cada dibujo
+  // ------------------------------------------------------ modos de pintar
+  //
+  // Hay dos modos. Se eligen en la app, con el engranaje del menú.
+  //  - Modo 1, "Pintado total": se pinta libre, los colores no se acaban.
+  //  - Modo 2, "Pintado por objeto": el personaje del dibujo (el pez, el
+  //    sol...) se pinta de un solo color, y ese color no sirve para el resto.
 
-  /// Cada color puede pintar como mucho esta parte del dibujo
-  /// (0.70 = el 70% de todo lo que se puede pintar). Cuando llega ahí, la voz
-  /// dice que se acabó y el color desaparece de la paleta de ese dibujo.
-  static const double limitePorColor = 0.70;
+  /// El modo que se usa si nunca se eligió otro (1 o 2).
+  static const int modoPorDefecto = 1;
 
   /// Cuántos colores, como mucho, tiene la paleta de cada dibujo.
   static const int maxColoresPorDibujo = 5;
 
-  /// Lo que dice la voz. {color} se cambia por el nombre del color.
-  static const String vozSeAcabo = '¡Se acabó el color {color}!';
-  static const String vozSeAcabaronTodos =
-      '¡Se acabaron todos los colores! ¡Muy bien!';
-  static const String vozEligeOtro = '¡Elige otro color!';
+  /// Al entrar a un dibujo no hay ningún color elegido y la voz dice esto
+  /// (también si toca el dibujo sin haber elegido un color).
+  static const String vozEligeUnColor = '¡Elige un color!';
 
-  /// Lo que dice si toca el dibujo cuando ya no queda ningún color.
-  static const String vozSinColores =
-      '¡Ya no quedan colores! Elige otro dibujo.';
+  /// Modo 1: cuando un mismo color cubre esta parte del dibujo (0.50 = la
+  /// mitad), la voz recomienda usar otro. Se dice una vez por color.
+  static const double parteParaRecomendar = 0.50;
+  static const String vozUsaOtroColor =
+      '¡Usa otro color, para que se vea más bonito!';
+
+  /// Modo 1: true = al recomendar otro color, el color se suelta y ella
+  /// elige el siguiente (puede volver a elegir el mismo y seguir pintando).
+  /// false = solo lo dice y el color sigue elegido.
+  static const bool soltarColorAlRecomendar = true;
+
+  /// Modo 2: el personaje se da por terminado cuando esta parte de él está
+  /// pintada (0.97 = el 97%). Entonces la voz pide otro color y el color se
+  /// suelta (nunca se elige otro solo).
+  static const double personajeTerminado = 0.97;
+
+  /// Modo 2: lo que dice la voz. {objeto} se cambia por el nombre del
+  /// personaje ("el pez") y {color} por el nombre del color.
+  static const String vozEligeOtroParaSeguir =
+      '¡Elige otro color para seguir pintando!';
+  static const String vozColorDelPersonaje = '¡Este color es para {objeto}!';
+  static const String vozPintaPersonajeCon = '¡Pinta {objeto} con el {color}!';
+  static const String vozOtroColorParaPersonaje =
+      '¡Elige otro color para {objeto}!';
+
+  /// Modo 2: cómo se nombra el personaje de los dibujos que no están en
+  /// [personajes] (por ejemplo, los de la carpeta mis_dibujos).
+  static const String personajeSinNombre = 'el personaje';
+
+  /// Modo 2: el personaje de cada dibujo (por su "id"). Sus partes se pintan
+  /// todas de un solo color: los rayos y la cara del sol, el cuerpo, la cola
+  /// y las aletas del pez... Lo demás (el fondo y los detalles, como la
+  /// puerta de la casa o las manchas de la mariposa) se pinta con otros
+  /// colores, uno o varios.
+  /// Los dibujos que no están aquí: el personaje es lo que no toca los bordes
+  /// del dibujo, menos los detalles que quedan adentro de una zona más grande
+  /// (un ojo, una mancha). Un dibujo agregado también puede traer su
+  /// personaje en el JSON (campo "personaje", ver lib/models/dibujo.dart).
+  static const Map<String, Personaje> personajes = <String, Personaje>{
+    'sol': Personaje('el sol', <String>[
+      'cara',
+      'rayo1',
+      'rayo2',
+      'rayo3',
+      'rayo4',
+      'rayo5',
+      'rayo6',
+      'rayo7',
+      'rayo8',
+    ]),
+    'flor': Personaje('la flor', <String>[
+      'petalo1',
+      'petalo2',
+      'petalo3',
+      'petalo4',
+      'petalo5',
+      'petalo6',
+    ]),
+    'pez': Personaje(
+        'el pez', <String>['cuerpo', 'cola', 'aleta_arriba', 'aleta_abajo']),
+    'casa': Personaje('la casa', <String>['pared', 'techo', 'chimenea']),
+    'gato': Personaje('el gato', <String>['cabeza', 'oreja_izq', 'oreja_der']),
+    'globos': Personaje('los globos', <String>['globo1', 'globo2', 'globo3']),
+    'manzana': Personaje('la manzana', <String>['manzana']),
+    'mariposa': Personaje('las alas', <String>[
+      'ala_sup_izq',
+      'ala_sup_der',
+      'ala_inf_izq',
+      'ala_inf_der',
+    ]),
+    'perro':
+        Personaje('el perro', <String>['cabeza', 'oreja_izq', 'oreja_der']),
+    'corazon': Personaje('el corazón', <String>['corazon']),
+    'helado': Personaje('el helado', <String>['bola_baja', 'bola_alta']),
+    'pollito':
+        Personaje('el pollito', <String>['cuerpo', 'ala_izq', 'ala_der']),
+    'carro': Personaje('el carro', <String>['cuerpo', 'cabina']),
+    'arbol': Personaje('el árbol', <String>['copa']),
+    'conejo':
+        Personaje('el conejo', <String>['cabeza', 'oreja_izq', 'oreja_der']),
+    'cupcake': Personaje(
+        'la crema', <String>['crema_baja', 'crema_media', 'crema_alta']),
+    'nube_lluvia': Personaje('la nube', <String>['nube']),
+    'tortuga': Personaje('la tortuga', <String>[
+      'caparazon',
+      'cabeza',
+      'cola',
+      'pata_izq',
+      'pata_der',
+    ]),
+    'barco':
+        Personaje('el barco', <String>['casco', 'vela_grande', 'vela_chica']),
+    'fresa': Personaje('la fresa', <String>['fresa']),
+    'oso': Personaje('el oso', <String>['cabeza', 'oreja_izq', 'oreja_der']),
+    'luna': Personaje('la luna', <String>['luna']),
+    'pato': Personaje('el pato', <String>['cuerpo', 'cabeza', 'ala', 'cola']),
+    'regalo': Personaje('el regalo', <String>['caja', 'tapa']),
+    'cerdito':
+        Personaje('el cerdito', <String>['cabeza', 'oreja_izq', 'oreja_der']),
+    'cohete': Personaje(
+        'el cohete', <String>['cuerpo', 'punta', 'aleta_izq', 'aleta_der']),
+    'hongo': Personaje('el hongo', <String>['gorro']),
+    'rana': Personaje('la rana', <String>['cabeza', 'ojo_izq', 'ojo_der']),
+    'arcoiris': Personaje('las nubes', <String>['nube_izq', 'nube_der']),
+    'abeja':
+        Personaje('la abeja', <String>['banda1', 'banda2', 'banda3', 'banda4']),
+    'paraguas':
+        Personaje('el paraguas', <String>['gajo1', 'gajo2', 'gajo3', 'gajo4']),
+    'pinguino':
+        Personaje('el pingüino', <String>['cuerpo', 'ala_izq', 'ala_der']),
+    'avion': Personaje('el avión', <String>['fuselaje', 'cola', 'ala']),
+    'ballena': Personaje('la ballena', <String>[
+      'cuerpo',
+      'cola_arriba',
+      'cola_abajo',
+      'aleta',
+    ]),
+  };
 
   // ------------------------------------------------------------ celebración
 
@@ -168,7 +293,7 @@ class Ajustes {
 
   /// Los colores de cada dibujo (como mucho 5), con su "id".
   /// Se escriben con el mismo nombre que en la lista [colores].
-  /// El primero de la lista es el que queda elegido al entrar al dibujo.
+  /// Valen para los dos modos. Al entrar no queda ninguno elegido: ella elige.
   static const Map<String, List<String>> paletasDibujos =
       <String, List<String>>{
     'sol': <String>['Amarillo', 'Naranja', 'Celeste', 'Rojo', 'Rosado'],

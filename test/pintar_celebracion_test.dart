@@ -12,38 +12,19 @@ void main() {
   setUp(prepararPrueba);
 
   testWidgets(
-      'al pintar el 95% del dibujo sale la celebración (sin usar todos '
-      'los colores)', (tester) async {
+      'al pintar el 95% del dibujo sale la celebración (aunque sea con un '
+      'solo color)', (tester) async {
     sinAvisosDeSonido();
     final dibujo = cuadrado('fiesta');
     final lienzo = await abrirPantalla(tester, <Dibujo>[dibujo]);
     final paleta = PaletaDibujo.enMemoria('fiesta')!;
-    final colores = PaletaDibujo.coloresDe(dibujo);
     final fiesta = celebracion;
-    final lugares = <Offset>[
-      for (final y in const <double>[100, 300, 500, 700, 900])
-        for (final x in const <double>[100, 300, 500, 700, 900])
-          lienzo.topLeft +
-              Offset(lienzo.width * x / 1000, lienzo.height * y / 1000),
-    ];
-    var toques = 0;
-    var vioPrimerAcabado = false;
-    while (fiesta.evaluate().isEmpty && toques < 300) {
-      await tester.tapAt(lugares[toques % lugares.length]);
-      toques++;
-      await esperar(tester, vueltas: 3);
-      if (!vioPrimerAcabado && paleta.disponibles(colores).length < 5) {
-        vioPrimerAcabado = true;
-        // Con un solo color (el 70%) todavía no está terminado.
-        expect(fiesta, findsNothing);
-        expect(paleta.celebrado, isFalse);
-      }
-    }
-    expect(vioPrimerAcabado, isTrue);
+
+    // Con un solo color: al cubrir la mitad se suelta y lo vuelve a elegir.
+    final vecesElegido = await pintarHastaCelebrar(tester, lienzo, dibujo);
+    expect(vecesElegido, 2);
     expect(fiesta, findsOneWidget);
     expect(paleta.celebrado, isTrue);
-    // No hizo falta gastar todos los colores.
-    expect(paleta.disponibles(colores), isNotEmpty);
 
     await tester.pump(const Duration(milliseconds: 1200));
     expect(find.text(Ajustes.celebracionLinea1), findsOneWidget);
@@ -62,8 +43,9 @@ void main() {
 
     // Seguir pintando no la repite.
     frases.clear();
+    if (colorElegido(tester) == null) await elegirColor(tester, 0);
     for (var k = 0; k < 6; k++) {
-      await tester.tapAt(lugares[k]);
+      await tester.tapAt(enPantalla(lienzo, dibujo, cuadricula[k]));
       await esperar(tester, vueltas: 3);
     }
     expect(fiesta, findsNothing);

@@ -92,17 +92,19 @@ class _PintorLienzo extends CustomPainter {
 ///
 /// Cómo funciona:
 ///  - Cada toque deja una mancha de color que se "derrama" desde el dedo,
-///    con el sonido de una gota de pintura. El tamaño de la mancha depende del tamaño de la zona:
-///    las zonas grandes necesitan varios toques y las pequeñas se llenan de
-///    un solo toque (ver Ajustes).
+///    con el sonido de una gota de pintura. El tamaño de la mancha depende
+///    del tamaño de la zona: las zonas grandes necesitan varios toques y las
+///    pequeñas se llenan de un solo toque (ver Ajustes).
 ///  - Si el dedo se arrastra, la pintura lo sigue (con sonido de pincel).
 ///  - La pintura queda "pegada" a la zona donde empezó el dedo y se recorta a
 ///    su forma, así que aunque el dedo se salga de las líneas el color no se sale.
+///  - Antes de pintar en una zona pregunta si se puede ([puedePintar]): así
+///    la pantalla decide (por ejemplo, en el Modo 2 el color del personaje no
+///    pinta el fondo).
 ///  - Cuando una mancha termina, se "hornea" dentro de la imagen del dibujo;
 ///    por eso pintar cuesta siempre lo mismo, aunque se pinte muchísimo.
 ///  - Mientras se pinta, mide cada tanto cuánto del dibujo cubre cada color
-///    de la paleta ([alMedir]). Así cada color se puede gastar solo hasta su
-///    límite (el 70% del dibujo).
+///    de la paleta y cuánto está pintado ([alMedir]).
 class Lienzo extends StatefulWidget {
   const Lienzo({
     super.key,
@@ -110,26 +112,28 @@ class Lienzo extends StatefulWidget {
     required this.color,
     this.colores = const <Color>[],
     this.puedePintar,
-    this.margen,
+    this.personaje = const <int>{},
     this.alMedir,
   });
 
   final Dibujo dibujo;
+
+  /// El color elegido (transparente = ninguno).
   final Color color;
 
   /// Los colores de la paleta del dibujo (los que se miden).
   final List<Color> colores;
 
-  /// Se pregunta al empezar a pintar y mientras se arrastra el dedo.
-  /// false = no se pinta (por ejemplo, el color se acabó).
-  final bool Function()? puedePintar;
+  /// Se pregunta al empezar a pintar en una zona (su número).
+  /// false = no se pinta (por ejemplo, no hay color elegido).
+  final bool Function(int zona)? puedePintar;
 
-  /// Cuánto más del dibujo puede pintar el color elegido (0 a 1). Si queda
-  /// poco, las manchas salen más chicas y el arrastre se detiene a tiempo.
-  final double Function()? margen;
+  /// Las zonas del personaje del dibujo, para medir cuánto de él está
+  /// pintado (vacío = no se mide).
+  final Set<int> personaje;
 
-  /// Recibe cuánto del dibujo cubre cada uno de [colores] (0 a 1) y cuánto
-  /// está pintado en total.
+  /// Recibe cuánto del dibujo cubre cada uno de [colores] (0 a 1), cuánto
+  /// está pintado en total y cuánto del personaje.
   final ValueChanged<Medida>? alMedir;
 
   @override
@@ -152,12 +156,7 @@ class _EstadoLienzo extends State<Lienzo>
   Trazo? _trazo; // la mancha que se está pintando ahora
   double _recorrido =
       0; // distancia arrastrada desde el último sonido de pincel
-  bool _detenido = false; // se acabó la pintura a mitad de un arrastre
-
-  /// Zona y color de la pasada que se pausó porque quedaba poca pintura
-  /// (al seguir, se sigue solo en esa misma zona y con ese mismo color).
-  int? _zonaPausada;
-  Color? _colorPausado;
+  bool _detenido = false; // esta pasada del dedo ya no pinta
 
   // Medición de cuánto cubre cada color.
   static const int _msEntreMediciones = 250;
@@ -165,14 +164,6 @@ class _EstadoLienzo extends State<Lienzo>
   bool _otraMedicion = false;
   Timer? _esperaMedicion;
   int _ultimaMedicion = -100000;
-
-  /// Pintura agregada desde la última medición (parte del dibujo, 0 a 1).
-  /// Se calcula "por arriba", para no pasarse del límite mientras se mide.
-  double _estimado = 0;
-
-  /// Lo estimado para la mancha actual desde la última medición
-  /// (en unidades²): nunca más que el tamaño de su zona.
-  double _unidadesTrazo = 0;
 
   @override
   void initState() {
@@ -196,7 +187,7 @@ class _EstadoLienzo extends State<Lienzo>
     await Pintura.abrir(widget.dibujo);
     if (!mounted) return;
     setState(() => _listo = true);
-    // Se mide lo que ya estaba pintado, para que la paleta quede al día.
+    // Se mide lo que ya estaba pintado, para que la pantalla quede al día.
     _pedirMedicion();
   }
 
@@ -224,51 +215,23 @@ class _EstadoLienzo extends State<Lienzo>
   Future<void> _medir() async {
     _midiendo = true;
     _ultimaMedicion = _reloj.elapsedMilliseconds;
-    final incluido = _estimado;
-    // Lo que la mancha actual pinte desde aquí se vuelve a contar desde cero
-    // (lo de antes queda dentro de esta medición).
-    _unidadesTrazo = 0;
-    Medida? cobertura;
+    Medida? medida;
     try {
-      cobertura = await Pintura.medirColores(
+      medida = await Pintura.medirColores(
         widget.dibujo,
         <Trazo>[for (final a in _activos) a.trazo],
         widget.colores,
+        personaje: widget.personaje,
       );
     } finally {
       _midiendo = false;
     }
     if (!mounted) return;
-    // Lo estimado hasta aquí ya quedó medido de verdad.
-    _estimado = math.max(0.0, _estimado - incluido);
-    if (cobertura != null) widget.alMedir?.call(cobertura);
+    if (medida != null) widget.alMedir?.call(medida);
     if (_otraMedicion) {
       _otraMedicion = false;
       _pedirMedicion();
     }
-  }
-
-  /// Área que se puede pintar del dibujo, en unidades².
-  double get _areaPintable {
-    final d = widget.dibujo;
-    final area = d.lado * d.lado * Pintura.fraccionPintable(d.id);
-    return area > 0 ? area : d.lado * d.lado;
-  }
-
-  /// Cuánto más puede pintar el color elegido, descontando lo que se pintó
-  /// desde la última medición (parte del dibujo).
-  double get _margenLibre {
-    final margen = widget.margen?.call() ?? double.infinity;
-    return margen - _estimado;
-  }
-
-  /// Suma [unidades] (unidades²) a lo estimado de la mancha actual, sin
-  /// pasarse del tamaño de su zona. Devuelve lo sumado como parte del dibujo.
-  double _extra(Trazo trazo, double unidades) {
-    final tope = widget.dibujo.areaVisible(trazo.region);
-    final nuevo = math.min(_unidadesTrazo + unidades, tope);
-    final extra = math.max(0.0, nuevo - _unidadesTrazo);
-    return extra / _areaPintable;
   }
 
   /// Hornea ya mismo todo lo que se estaba pintando.
@@ -357,7 +320,6 @@ class _EstadoLienzo extends State<Lienzo>
     final dibujo = widget.dibujo;
     final area = dibujo.areaVisible(i);
     final Trazo trazo;
-    final double unidades;
     if (area < Ajustes.areaUnToque) {
       // Zona pequeña: un círculo que la cubre entera.
       final caja = dibujo.limites(i);
@@ -377,34 +339,17 @@ class _EstadoLienzo extends State<Lienzo>
         semilla: 0,
         inicio: p,
       );
-      unidades = area;
     } else {
-      var radio = _radioPara(area);
-      // Si al color le queda poca pintura, la mancha sale más chica
-      // (la "última gota"), así no se pasa de su límite.
-      final libre = _margenLibre * _areaPintable;
-      if (libre.isFinite) {
-        final radioQueAlcanza = math.sqrt(math.max(0.0, libre) / math.pi);
-        radio = math.max(
-          math.min(radio, radioQueAlcanza),
-          Ajustes.radioUltimaGota,
-        );
-      }
       trazo = Trazo(
         region: i,
         color: widget.color,
-        radio: radio,
+        radio: _radioPara(area),
         semilla: 1 + _azar.nextInt(1 << 30),
         inicio: p,
       );
-      unidades = math.min(math.pi * radio * radio, area);
     }
     _trazo = trazo;
     _recorrido = 0;
-    _unidadesTrazo = 0;
-    final extra = _extra(trazo, unidades);
-    _unidadesTrazo = math.min(unidades, area);
-    _estimado += extra;
     _activos.add(_Activo(trazo, _reloj.elapsedMilliseconds));
     if (!_ticker.isActive) _ticker.start();
     Sonidos.gota();
@@ -414,19 +359,17 @@ class _EstadoLienzo extends State<Lienzo>
   Offset _aDibujo(Offset local, double lado) =>
       local * (widget.dibujo.lado / lado);
 
-  bool _puedePintar() => widget.puedePintar?.call() ?? true;
+  bool _puedePintar(int zona) => widget.puedePintar?.call(zona) ?? true;
 
   void _alBajar(PointerDownEvent e, double lado) {
     if (_puntero != null || !_listo) return;
     _puntero = e.pointer;
     _trazo = null;
     _detenido = false;
-    _zonaPausada = null;
-    _colorPausado = null;
     final p = _aDibujo(e.localPosition, lado);
     final i = _regionEn(p);
     if (i == null) return;
-    if (!_puedePintar()) {
+    if (!_puedePintar(i)) {
       _detenido = true;
       return;
     }
@@ -439,27 +382,17 @@ class _EstadoLienzo extends State<Lienzo>
     final trazo = _trazo;
     if (trazo == null) {
       // Empezó fuera del dibujo: se pega a la primera zona que toque.
-      // (O se pausó por falta de pintura: sigue en la misma zona.)
       final i = _regionEn(p);
       if (i == null) return;
-      final pausada = _zonaPausada;
-      if (pausada != null) {
-        if (widget.color != _colorPausado) {
-          // Mientras tanto se acabó el color: esta pasada termina aquí.
-          _detenido = true;
-          return;
-        }
-        if (i != pausada || _margenLibre <= 0.005) return;
-      }
-      if (!_puedePintar()) {
+      if (!_puedePintar(i)) {
         _detenido = true;
         return;
       }
       setState(() => _empezar(p, i));
       return;
     }
-    if (trazo.color != widget.color || !_puedePintar()) {
-      // Se acabó el color (o se cambió): esta pasada termina aquí.
+    if (trazo.color != widget.color) {
+      // Se soltó o se cambió el color: esta pasada termina aquí.
       _detenido = true;
       _trazo = null;
       if (_activos.isNotEmpty && !_ticker.isActive) _ticker.start();
@@ -467,21 +400,7 @@ class _EstadoLienzo extends State<Lienzo>
     }
     final paso = (p - trazo.puntos.last).distance;
     if (paso < 6) return; // movimiento muy chiquito: se ignora
-    // ¿Alcanza la pintura para este tramo? Si no, la pasada se pausa hasta
-    // la próxima medición (puede que el dedo pase por donde ya había de este
-    // color, y eso no gasta). Al seguir, empieza una mancha nueva.
-    final extra = _extra(trazo, paso * trazo.anchoFranja);
-    if (extra > 0 && extra > _margenLibre) {
-      _zonaPausada = trazo.region;
-      _colorPausado = trazo.color;
-      _trazo = null;
-      if (!_ticker.isActive) _ticker.start();
-      _pedirMedicion();
-      return;
-    }
     trazo.sumar(p);
-    _unidadesTrazo += extra * _areaPintable;
-    _estimado += extra;
     _recorrido += paso;
     if (_recorrido >= Ajustes.distanciaEntreTrazos) {
       _recorrido = 0;
@@ -496,8 +415,6 @@ class _EstadoLienzo extends State<Lienzo>
     _puntero = null;
     _trazo = null;
     _detenido = false;
-    _zonaPausada = null;
-    _colorPausado = null;
     // Para que la mancha se hornee aunque ya haya terminado de derramarse.
     if (_activos.isNotEmpty && !_ticker.isActive) _ticker.start();
   }

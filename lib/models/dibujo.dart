@@ -4,6 +4,8 @@ import 'dart:ui';
 
 import 'package:path_drawing/path_drawing.dart';
 
+import '../config.dart';
+
 /// Una zona del dibujo que se puede pintar.
 class Region {
   Region({required this.id, required this.path});
@@ -34,7 +36,8 @@ class Detalle {
 ///   "lado": 1000,           // opcional; el dibujo es un cuadrado de lado x lado
 ///   "regiones": [ {"id": "cara", "path": "M 0 0 L 10 0 ... Z"} ],   // en orden: las últimas quedan encima
 ///   "detalles": [ {"path": "...", "relleno": "#000000", "grosor": 10} ],  // opcional
-///   "colores": ["Amarillo", "Naranja", "Celeste"]   // opcional: su paleta (máximo 5)
+///   "colores": ["Amarillo", "Naranja", "Celeste"],  // opcional: su paleta (máximo 5)
+///   "personaje": {"nombre": "el sol", "partes": ["cara", "rayo1"]}  // opcional (Modo 2)
 /// }
 /// Los "path" son trazos SVG (M, L, C, Q, A, Z...).
 ///
@@ -53,6 +56,7 @@ class Dibujo {
     this.capas = true,
     this.archivoLineas,
     this.colores = const <String>[],
+    this.personaje,
   });
 
   final String id;
@@ -61,7 +65,7 @@ class Dibujo {
   final List<Region> regiones;
   final List<Detalle> detalles;
 
-  /// true si lo agregó una persona desde la "Zona de papás".
+  /// true si lo agregó una persona desde los Ajustes (el engranaje del menú).
   final bool importado;
 
   /// false = las zonas no se enciman (dibujos hechos desde una imagen):
@@ -78,6 +82,10 @@ class Dibujo {
   /// Nombres de los colores que trae el dibujo en su JSON (campo "colores").
   /// Vacío = se usan los de config.dart.
   final List<String> colores;
+
+  /// El personaje que trae el dibujo en su JSON (campo "personaje"), para el
+  /// Modo 2. null = se usa el de config.dart o se busca solo.
+  final Personaje? personaje;
 
   /// Rectángulo que ocupa cada región (calculado una vez).
   late final List<Rect> _limites =
@@ -222,7 +230,26 @@ class Dibujo {
       capas: json['capas'] != false,
       archivoLineas: json['lineas'] is String ? json['lineas'] as String : null,
       colores: colores,
+      personaje: _leerPersonaje(json['personaje']),
     );
+  }
+
+  /// "personaje": {"nombre": "el gato", "partes": ["cabeza", "orejas"]}
+  /// o solo la lista de partes: "personaje": ["cabeza", "orejas"].
+  static Personaje? _leerPersonaje(Object? valor) {
+    Object? partes = valor;
+    var nombre = Ajustes.personajeSinNombre;
+    if (valor is Map) {
+      partes = valor['partes'];
+      final n = valor['nombre'];
+      if (n is String && n.trim().isNotEmpty) nombre = n.trim();
+    }
+    if (partes is! List) return null;
+    final lista = <String>[
+      for (final p in partes)
+        if (p is String && p.trim().isNotEmpty) p.trim(),
+    ];
+    return lista.isEmpty ? null : Personaje(nombre, lista);
   }
 
   static Path _leerPath(String d, String donde) {

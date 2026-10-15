@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:colorear_ninos/config.dart';
 import 'package:colorear_ninos/models/dibujo.dart';
+import 'package:colorear_ninos/models/modo_pintado.dart';
 import 'package:colorear_ninos/models/paleta_dibujo.dart';
 import 'package:colorear_ninos/models/pintura.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,15 @@ Dibujo _dibujo(String id, {List<String> colores = const <String>[]}) => Dibujo(
 
 List<String> _nombres(List<ColorConNombre> lista) =>
     <String>[for (final c in lista) c.nombre];
+
+/// Una mancha gigante que llena toda la zona [region].
+Trazo _llenar(int region, Color color) => Trazo(
+      region: region,
+      color: color,
+      radio: 1500,
+      semilla: 0,
+      inicio: const Offset(500, 500),
+    );
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +53,7 @@ void main() {
         final colores = PaletaDibujo.coloresDe(_dibujo(id));
         // Todos los nombres existen en la lista de colores.
         expect(colores.length, nombres!.length, reason: id);
-        expect(colores.length, inInclusiveRange(1, 5), reason: id);
+        expect(colores.length, inInclusiveRange(2, 5), reason: id);
       }
     });
 
@@ -56,89 +66,113 @@ void main() {
           <String>['Naranja', 'Marrón', 'Rosado', 'Celeste', 'Verde']);
     });
 
+    test('con un solo color se agrega otro (para poder cambiar)', () {
+      final d = Dibujo.desdeTexto(
+        '{"id":"foto_rojo","regiones":[{"path":"M 0 0 L 10 0 L 10 10 Z"}],'
+        '"colores":["Rojo"]}',
+      );
+      expect(_nombres(PaletaDibujo.coloresDe(d)), <String>['Rojo', 'Amarillo']);
+    });
+
     test('sin paleta propia usa la de por defecto', () {
       expect(_nombres(PaletaDibujo.coloresDe(_dibujo('foto_nuevo'))),
           Ajustes.paletaPorDefecto);
     });
   });
 
-  group('cada color pinta como mucho el 70%', () {
-    test('al llegar al límite se acaba y no vuelve', () async {
-      final colores = PaletaDibujo.coloresDe(_dibujo('sol'));
-      expect(colores.first.nombre, 'Amarillo');
-      final paleta = await PaletaDibujo.cargar('limite');
-      expect(paleta.actualizar(colores, <double>[0.35, 0, 0, 0, 0]), isEmpty);
-      expect(paleta.nivel('Amarillo'), closeTo(0.5, 0.01));
-      final acabados = paleta.actualizar(colores, <double>[0.70, 0.1, 0, 0, 0]);
-      expect(_nombres(acabados), <String>['Amarillo']);
-      expect(paleta.acabado('Amarillo'), isTrue);
-      expect(paleta.nivel('Amarillo'), 0);
-      expect(paleta.margen('Amarillo'), 0);
-      expect(paleta.disponibles(colores).length, 4);
-      // Aunque después se pinte encima con otro color, no vuelve.
-      expect(paleta.actualizar(colores, <double>[0.1, 0.6, 0, 0, 0]), isEmpty);
-      expect(paleta.acabado('Amarillo'), isTrue);
+  group('modo de pintar', () {
+    tearDown(() => ModoPintado.cambiar(ModoPintado.total));
+
+    test('empieza en el Modo 1 y el elegido queda guardado', () async {
+      expect(Ajustes.modoPorDefecto, ModoPintado.total);
+      expect(ModoPintado.actual, ModoPintado.total);
+      await ModoPintado.cambiar(ModoPintado.porObjeto);
+      expect(ModoPintado.actual, ModoPintado.porObjeto);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('modo_pintado'), 2);
+      // Un número que no es un modo deja el Modo 1.
+      await ModoPintado.cambiar(7);
+      expect(ModoPintado.actual, ModoPintado.total);
     });
 
-    test('cuenta lo más que llegó a cubrir (tapar un color no lo rellena)',
-        () async {
-      final colores = PaletaDibujo.coloresDe(_dibujo('sol'));
-      final paleta = await PaletaDibujo.cargar('maximo');
-      paleta.actualizar(colores, <double>[0.5, 0, 0, 0, 0]);
-      paleta.actualizar(colores, <double>[0.2, 0.3, 0, 0, 0]);
-      expect(paleta.gasto('Amarillo'), closeTo(0.5, 0.001));
-      expect(paleta.margen('Amarillo'), closeTo(0.2, 0.001));
+    test('al abrir la app se lee el modo guardado', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'modo_pintado': 2,
+      });
+      await ModoPintado.cargar();
+      expect(ModoPintado.actual, ModoPintado.porObjeto);
     });
   });
 
-  group('cada dibujo guarda su paleta', () {
-    test('la paleta de un dibujo no se mezcla con la de otro', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'paleta_pintado': '{"gasto":{"Rojo":0.71},"acabados":["Rojo"]}',
-      });
-      final pintado = await PaletaDibujo.cargar('pintado');
-      expect(pintado.acabado('Rojo'), isTrue);
-      final nuevo = await PaletaDibujo.cargar('sin_pintar');
-      expect(nuevo.acabado('Rojo'), isFalse);
-      expect(nuevo.gasto('Rojo'), 0);
-    });
+  group('cada dibujo recuerda lo suyo', () {
+    test('lo de un dibujo no se mezcla con otro y se guarda en el celular',
+        () async {
+      final pez = await PaletaDibujo.cargar('recordar_pez');
+      final otro = await PaletaDibujo.cargar('recordar_otro');
+      pez.marcarRecomendado('Rojo');
+      pez.fijarColorPersonaje('Naranja');
+      pez.usarEnResto('Celeste');
+      pez.marcarPersonajeTerminado();
+      pez.marcarCelebrado();
+      expect(pez.recomendado('Rojo'), isTrue);
+      expect(pez.recomendado('Azul'), isFalse);
+      expect(pez.colorPersonaje, 'Naranja');
+      expect(pez.usadoEnResto('Celeste'), isTrue);
+      expect(pez.usadoEnResto('Naranja'), isFalse);
+      expect(otro.recomendado('Rojo'), isFalse);
+      expect(otro.colorPersonaje, isNull);
+      expect(otro.personajeTerminado, isFalse);
+      expect(otro.celebrado, isFalse);
 
-    test('se guarda en el celular', () async {
-      final colores = PaletaDibujo.coloresDe(_dibujo('casa'));
-      final paleta = await PaletaDibujo.cargar('guardar');
-      paleta.actualizar(colores, <double>[0.4, 0.2, 0, 0, 0]);
       await PaletaDibujo.guardarPendientes();
       final prefs = await SharedPreferences.getInstance();
-      final texto = prefs.getString('paleta_guardar');
-      expect(texto, isNotNull);
-      expect(texto, contains('Rojo'));
+      final guardado =
+          jsonDecode(prefs.getString('paleta_recordar_pez')!) as Map;
+      expect(guardado['recomendados'], <String>['Rojo']);
+      expect(guardado['colorPersonaje'], 'Naranja');
+      expect(guardado['coloresResto'], <String>['Celeste']);
+      expect(guardado['personajeTerminado'], isTrue);
+      expect(guardado['celebrado'], isTrue);
     });
 
-    test('recuerda si ya salió la celebración', () async {
-      final paleta = await PaletaDibujo.cargar('celebrado');
-      expect(paleta.celebrado, isFalse);
-      paleta.marcarCelebrado();
-      await PaletaDibujo.guardarPendientes();
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getString('paleta_celebrado'), contains('celebrado'));
-      Pintura.borrarId('celebrado');
-      expect(PaletaDibujo.enMemoria('celebrado')!.celebrado, isFalse);
-    });
-
-    test('la celebración guardada se lee al abrir la app', () async {
+    test('lo guardado se lee al abrir la app', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
-        'paleta_terminado': '{"gasto":{"Rojo":0.71},"acabados":["Rojo"],'
+        'paleta_leido': '{"recomendados":["Verde"],"colorPersonaje":"Azul",'
+            '"coloresResto":["Rojo","Amarillo"],"personajeTerminado":true,'
             '"celebrado":true}',
       });
-      final paleta = await PaletaDibujo.cargar('terminado');
+      final paleta = await PaletaDibujo.cargar('leido');
+      expect(paleta.recomendado('Verde'), isTrue);
+      expect(paleta.colorPersonaje, 'Azul');
+      expect(paleta.usadoEnResto('Rojo'), isTrue);
+      expect(paleta.usadoEnResto('Amarillo'), isTrue);
+      expect(paleta.personajeTerminado, isTrue);
       expect(paleta.celebrado, isTrue);
     });
 
-    test('borrar lo pintado deja la paleta completa y borra lo guardado',
-        () async {
-      final colores = PaletaDibujo.coloresDe(_dibujo('sol'));
+    test(
+        'lo que guardó la v8 se lee sin problema (los colores ya no se '
+        'acaban)', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'paleta_v8': '{"gasto":{"Rojo":0.71},"acabados":["Rojo"],'
+            '"celebrado":true}',
+        'paleta_danado': 'esto no es un JSON',
+      });
+      final vieja = await PaletaDibujo.cargar('v8');
+      expect(vieja.celebrado, isTrue);
+      expect(vieja.recomendado('Rojo'), isFalse);
+      expect(vieja.colorPersonaje, isNull);
+      final danada = await PaletaDibujo.cargar('danado');
+      expect(danada.celebrado, isFalse);
+      expect(danada.colorPersonaje, isNull);
+    });
+
+    test('borrar lo pintado la deja como nueva y borra lo guardado', () async {
       final vieja = await PaletaDibujo.cargar('borrar');
-      vieja.actualizar(colores, <double>[0.7, 0.3, 0, 0, 0]);
+      vieja.marcarRecomendado('Amarillo');
+      vieja.fijarColorPersonaje('Amarillo');
+      vieja.usarEnResto('Celeste');
+      vieja.marcarCelebrado();
       await PaletaDibujo.guardarPendientes();
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('paleta_borrar'), isNotNull);
@@ -148,11 +182,13 @@ void main() {
       expect(prefs.getString('paleta_borrar'), isNull);
       final nueva = PaletaDibujo.enMemoria('borrar')!;
       expect(identical(nueva, vieja), isFalse);
-      expect(nueva.acabado('Amarillo'), isFalse);
-      expect(nueva.disponibles(colores).length, 5);
+      expect(nueva.recomendado('Amarillo'), isFalse);
+      expect(nueva.colorPersonaje, isNull);
+      expect(nueva.usadoEnResto('Celeste'), isFalse);
+      expect(nueva.celebrado, isFalse);
 
       // Algo que llegue tarde para la paleta vieja ya no se guarda.
-      vieja.actualizar(colores, <double>[0.7, 0.7, 0.7, 0, 0]);
+      vieja.usarEnResto('Rojo');
       await PaletaDibujo.guardarPendientes();
       expect(prefs.getString('paleta_borrar'), isNull);
     });
@@ -171,23 +207,9 @@ void main() {
       const amarillo = Color(0xFFFDD835);
       // Manchas gigantes: el rojo llena el cuadro y el azul el fondo (que
       // queda tapado por el cuadro en la mitad izquierda).
-      final manchaRoja = Trazo(
-        region: 1,
-        color: rojo,
-        radio: 1500,
-        semilla: 0,
-        inicio: const Offset(250, 500),
-      );
-      final manchaAzul = Trazo(
-        region: 0,
-        color: azul,
-        radio: 1500,
-        semilla: 0,
-        inicio: const Offset(750, 500),
-      );
       final medida = await Pintura.medirColores(
         d,
-        <Trazo>[manchaRoja, manchaAzul],
+        <Trazo>[_llenar(1, rojo), _llenar(0, azul)],
         const <Color>[rojo, azul, amarillo],
       );
       expect(medida, isNotNull);
@@ -201,15 +223,7 @@ void main() {
       // Solo el azul, en el fondo: cubre la mitad derecha.
       final soloAzul = await Pintura.medirColores(
         d,
-        <Trazo>[
-          Trazo(
-            region: 0,
-            color: azul,
-            radio: 1500,
-            semilla: 0,
-            inicio: const Offset(750, 500),
-          ),
-        ],
+        <Trazo>[_llenar(0, azul)],
         const <Color>[rojo, azul],
       );
       expect(soloAzul!.colores[0], 0);
@@ -218,19 +232,53 @@ void main() {
       expect(soloAzul.pintado, closeTo(0.5, 0.03));
       final sinPaleta = await Pintura.medirColores(
         d,
-        <Trazo>[
-          Trazo(
-            region: 0,
-            color: azul,
-            radio: 1500,
-            semilla: 0,
-            inicio: const Offset(750, 500),
-          ),
-        ],
+        <Trazo>[_llenar(0, azul)],
         const <Color>[rojo],
       );
       expect(sinPaleta!.colores[0], 0);
       expect(sinPaleta.pintado, closeTo(0.5, 0.03));
+    });
+  });
+
+  testWidgets('se mide cuánto del personaje está pintado y de qué color',
+      (tester) async {
+    await tester.runAsync(() async {
+      // El agua (todo), el pez (un cuadro en el medio) y un ojo encima del
+      // pez. El personaje es solo el pez: el ojo es un detalle.
+      final d = Dibujo.desdeTexto(
+        '{"id":"medida_pez","regiones":['
+        '{"id":"agua","path":"M 0 0 L 1000 0 L 1000 1000 L 0 1000 Z"},'
+        '{"id":"pez","path":"M 250 250 L 750 250 L 750 750 L 250 750 Z"},'
+        '{"id":"ojo","path":"M 300 300 L 400 300 L 400 400 L 300 400 Z"}]}',
+      );
+      const naranja = Color(0xFFFB8C00);
+      const celeste = Color(0xFF00ACC1);
+      const colores = <Color>[naranja, celeste];
+      const personaje = <int>{1};
+
+      final vacio = await Pintura.medirColores(d, const <Trazo>[], colores,
+          personaje: personaje);
+      expect(vacio!.personaje, 0);
+
+      // Solo el agua, celeste: el pez sigue sin pintar.
+      final soloAgua = await Pintura.medirColores(
+          d, <Trazo>[_llenar(0, celeste)], colores,
+          personaje: personaje);
+      expect(soloAgua!.personaje, lessThan(0.02));
+      expect(soloAgua.fueraDelPersonaje[1], closeTo(0.75, 0.02));
+      expect(soloAgua.enPersonaje[1], lessThan(0.02));
+
+      // El pez naranja (el ojo no cuenta: es un detalle).
+      final conPez = await Pintura.medirColores(
+          d, <Trazo>[_llenar(0, celeste), _llenar(1, naranja)], colores,
+          personaje: personaje);
+      expect(conPez!.personaje, greaterThan(Ajustes.personajeTerminado));
+      expect(conPez.enPersonaje[0], greaterThan(0.95));
+      expect(conPez.enPersonaje[1], lessThan(0.02));
+      expect(conPez.fueraDelPersonaje[0], lessThan(0.01));
+      expect(conPez.fueraDelPersonaje[1], closeTo(0.75, 0.02));
+      // Falta el ojo: casi todo, pero no todo, está pintado.
+      expect(conPez.pintado, closeTo(0.99, 0.01));
     });
   });
 }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../config.dart';
 import '../data/repositorio.dart';
 import '../models/dibujo.dart';
+import '../models/modo_pintado.dart';
 import '../models/paleta_dibujo.dart';
 import '../models/pintura.dart';
 import '../widgets/botones.dart';
@@ -12,7 +13,8 @@ import 'pantalla_padres.dart';
 import 'pantalla_pintar.dart';
 
 /// Menú principal: una cuadrícula de dibujos. Tocar uno lo abre para pintar.
-/// El engranaje de la esquina (mantenerlo presionado) abre la Zona de papás.
+/// El engranaje de la esquina abre los Ajustes (el modo de pintar y la zona
+/// de papás).
 class PantallaInicio extends StatefulWidget {
   const PantallaInicio({super.key});
 
@@ -54,6 +56,7 @@ class _EstadoInicio extends State<PantallaInicio> {
       // de cada dibujo.
       await Pintura.cargar(lista);
       await PaletaDibujo.cargarVarias(lista.map((d) => d.id));
+      await ModoPintado.cargar();
       if (!mounted) return;
       setState(() {
         _dibujos = lista;
@@ -115,7 +118,7 @@ class _EstadoInicio extends State<PantallaInicio> {
     await SystemNavigator.pop();
   }
 
-  Future<void> _abrirZonaPadres() async {
+  Future<void> _abrirAjustes() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const PantallaPadres()),
     );
@@ -173,15 +176,18 @@ class _EstadoInicio extends State<PantallaInicio> {
               child: Row(
                 children: [
                   const Expanded(child: _Titulo()),
+                  // Ajustes: el modo de pintar y la zona de papás.
                   GestureDetector(
+                    key: const ValueKey<String>('engranaje'),
                     behavior: HitTestBehavior.opaque,
-                    onLongPress: _abrirZonaPadres,
+                    onTap: _abrirAjustes,
+                    onLongPress: _abrirAjustes,
                     child: const Padding(
                       padding: EdgeInsets.all(14),
                       child: Icon(
                         Icons.settings_rounded,
-                        size: 26,
-                        color: Colors.black26,
+                        size: 30,
+                        color: Colors.black38,
                       ),
                     ),
                   ),

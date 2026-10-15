@@ -9,20 +9,23 @@ dibujos dice **COLOREA ARLETH**.
 - **Presentación:** al abrir la app caen estrellas de colores, aparecen saltando las letras de **PINTEMOS ARLETH**. Es sin sonido, dura unos 3,5 segundos y tocar la pantalla la salta.
 - **Pintar con toques:** se elige un color abajo y se toca el dibujo. Cada toque suena como una gota de pintura que cae y salpica (hay 5 gotas distintas, cada una termina en una nota musical, así tocar seguido suena como una melodía) y deja una mancha de pintura que se derrama desde el dedo, con gotitas salpicadas. Las zonas grandes (el cielo, la cabeza del gato) necesitan varios toques; las pequeñas (una ventana, una oreja) se llenan de un solo toque. Si arrastra el dedo, la pintura lo sigue con un sonido de pincel sobre el papel (4 distintos, con un brillito suave).
 - El color queda siempre **dentro de la zona** donde empezó el dedo; aunque se salga de las líneas, no se sale la pintura.
-- **Paleta de cada dibujo:** cada dibujo trae sus propios colores, como mucho 5, elegidos para que tengan sentido (el sol: amarillo, naranja, celeste, rojo y rosado; el pingüino: negro, naranja, celeste, azul y gris...). Cada color es un tarrito redondo que muestra cuánta pintura le queda. El elegido crece, rebota y muestra una estrellita.
-- **Cada color pinta como mucho el 70% del dibujo:** lo que gasta pintura es la parte del dibujo que cubre ese color (pintar encima de lo que ya es de ese color no gasta). Cuando llega al 70%, la voz dice "¡Se acabó el color rojo!", el tarrito desaparece de la paleta y queda elegido el siguiente color. Si le queda poquito, las últimas manchas salen más chicas. Así aprende a usar varios colores.
-- **Celebración al terminar:** cuando el dibujo queda pintado al menos en un **95%** (con cualquier color, no hace falta usar todos), sale un cartel grande **"¡FELICIDADES! LO PINTASTE MUY BIEN"** con estrellas que giran y brillan alrededor y estrellitas que salen volando, suena una fiesta (campanitas y aplausos) y la voz dice "¡Felicidades! ¡Lo pintaste muy bien!". Se quita sola a los 7 segundos o tocándola. Sale una sola vez por dibujo; si se borra y se vuelve a pintar, sale otra vez. Como cada color pinta como mucho el 70%, para terminar un dibujo se usan al menos 2 colores.
-- **Cada dibujo guarda su paleta:** al entrar a un dibujo sin pintar, la paleta está completa; al volver a uno ya pintado, aparece como se dejó (sin los colores que se acabaron), aunque se cierre la app. Si se acaban los 5 colores, la bandeja muestra "¡Muy bien!" con dos estrellas.
+- **Paleta de cada dibujo:** cada dibujo trae sus propios colores, como mucho 5, elegidos para que tengan sentido (el sol: amarillo, naranja, celeste, rojo y rosado; el pingüino: negro, naranja, celeste, azul y gris...). Cada color es un tarrito redondo de pintura y **los colores no se acaban**. El elegido crece, rebota y muestra una estrellita.
+- **Ella elige el color:** al entrar a un dibujo no hay ningún color elegido: la voz dice **"¡Elige un color!"** y los tarritos saltan uno tras otro hasta que ella elige uno. Si toca el dibujo sin color, no se pinta y la voz se lo vuelve a pedir. Cuando hay que cambiar de color, el color se suelta y **nunca se elige otro solo**: siempre lo elige ella.
+- **Dos modos de pintar** (se cambian en el engranaje del menú, ver "Ajustes"):
+  - **Modo 1 – Pintado total** (el que viene puesto): pinta libre con los colores del dibujo. Cuando un mismo color ya cubre **la mitad del dibujo**, la voz dice **"¡Usa otro color, para que se vea más bonito!"** y ese color se suelta para que elija otro (si quiere, puede volver a elegir el mismo y seguir). Lo recomienda una sola vez por color en cada dibujo.
+  - **Modo 2 – Pintado por objeto:** cada dibujo tiene un **personaje** (el pez, el sol con sus rayos, la casa, las alas de la mariposa...) que se pinta **entero de un solo color**: el primer color con el que toca el personaje queda como su color. Con otro color, el personaje no se pinta (la voz dice "¡Pinta el pez con el naranja!"), y con su color no se pinta el resto ("¡Este color es para el pez!"). Un color que ya usó en el fondo no puede ser el del personaje ("¡Elige otro color para el pez!"). Cuando termina el personaje, la voz dice **"¡Elige otro color para seguir pintando!"** y el color se suelta. El fondo y los detalles (la puerta, las burbujas, las manchas...) se pintan con los otros colores, uno o varios. Así cada dibujo queda con al menos 2 colores. Con su color puede seguir retocando el personaje.
+- **Celebración al terminar:** cuando el dibujo queda pintado al menos en un **95%** (con cualquier color, no hace falta usar todos, en los dos modos), sale un cartel grande **"¡FELICIDADES! LO PINTASTE MUY BIEN"** con estrellas que giran y brillan alrededor y estrellitas que salen volando, suena una fiesta (campanitas y aplausos) y la voz dice "¡Felicidades! ¡Lo pintaste muy bien!". Se quita sola a los 7 segundos o tocándola. Sale una sola vez por dibujo; si se borra y se vuelve a pintar, sale otra vez.
+- **Cada dibujo recuerda lo suyo:** el color de su personaje (Modo 2), los colores a los que ya se les recomendó cambiar (Modo 1) y si ya salió la celebración, aunque se cierre la app. Un dibujo pintado en un modo se puede seguir pintando en el otro.
 - **Voz de los colores:** al elegir un color, una voz dice su nombre ("¡Rojo!"). Mientras habla, los demás colores se ven más claros y no responden, así la palabra se escucha completa. La voz usa un tono casi normal (antes era muy aguda y sonaba a robot) y la app elige la voz en español de mejor calidad que tenga el celular.
 - **Voces grabadas (opcional, las más naturales):** si grabas tu voz diciendo los colores y las frases, y pones los archivos en `assets/voces/`, la app usa esas grabaciones en vez de la voz del celular. Lo que no esté grabado lo sigue diciendo la voz del celular. Ver `assets/voces/LEEME.txt`.
 - **Se guarda solo:** lo pintado queda guardado en el celular (una imagen por dibujo), aunque se cierre la app o se apague el teléfono.
 - **Siempre fluida:** cada mancha, al terminar de derramarse, se "hornea" dentro de la imagen del dibujo. Por eso pintar cuesta lo mismo al principio que después de horas de uso.
-- Botones grandes arriba: **inicio**, **anterior**, **siguiente** y **borrar** (el rojo). Borrar no pregunta: deja el dibujo en blanco y su paleta completa otra vez.
-- **Menú:** arriba hay dos botones: el naranja (escoba) **borra lo pintado de todos los dibujos** y deja todas las paletas completas (pregunta antes), y el rojo (apagado) **cierra la app** al instante y vuelve a la pantalla del celular.
+- Botones grandes arriba: **inicio**, **anterior**, **siguiente** y **borrar** (el rojo). Borrar no pregunta: deja el dibujo en blanco y como nuevo (el color elegido se queda).
+- **Menú:** arriba hay dos botones: el naranja (escoba) **borra lo pintado de todos los dibujos** (pregunta antes), y el rojo (apagado) **cierra la app** al instante y vuelve a la pantalla del celular.
 - El menú principal muestra los dibujos con lo que ya se pintó, de dos en dos. Se desliza hacia arriba y abajo con el dedo (la barra de la derecha muestra en qué parte de la lista va). Se toca un dibujo y se abre.
 - Viene con **34 dibujos** (animales, frutas, vehículos, cosas del cielo y del jardín...) y **los que tú agregues en la carpeta `mis_dibujos`** (ver "Agregar dibujos nuevos").
 - **Ícono propio:** un arcoíris pintado con un pincel (carpeta `icono/`, se crea con `tools/generar_icono.py`).
-- **Zona de papás**: mantener presionado el engranaje gris (arriba a la derecha del menú) para agregar dibujos nuevos.
+- **Ajustes:** tocar el engranaje gris (arriba a la derecha del menú). Ahí se elige el **modo de pintar** (vale para todos los dibujos y queda guardado) y se agregan o borran dibujos pegando su texto.
 
 ### Si la voz no suena
 
@@ -59,11 +62,14 @@ Todo está en `lib/config.dart`:
 | Usar las voces "de internet" del celular | `vozPermitirInternet` |
 | Usar (o no) tus voces grabadas | `usarVocesGrabadas` |
 | Voz más lenta o más rápida | `vozVelocidad` |
-| Cuánto puede pintar cada color | `limitePorColor` (0.70 = el 70% del dibujo) |
-| Los colores de cada dibujo | `paletasDibujos` (el primero queda elegido al entrar) |
+| El modo que viene puesto (si nunca se eligió otro) | `modoPorDefecto` (1 o 2) |
+| Cuándo se recomienda otro color en el Modo 1 | `parteParaRecomendar` (0.50 = la mitad del dibujo) |
+| Que en el Modo 1 el color NO se suelte al recomendar otro | `soltarColorAlRecomendar = false` |
+| Cuándo el personaje está terminado en el Modo 2 | `personajeTerminado` (0.97 = el 97% del personaje) |
+| El personaje de cada dibujo (Modo 2) | `personajes` (sus partes son los `id` de las zonas) |
+| Lo que dice la voz | `vozEligeUnColor`, `vozUsaOtroColor`, `vozEligeOtroParaSeguir`, `vozColorDelPersonaje`, `vozPintaPersonajeCon`, `vozOtroColorParaPersonaje` |
+| Los colores de cada dibujo | `paletasDibujos` |
 | Los colores de los dibujos que no están en la lista | `paletaPorDefecto` |
-| Lo que dice la voz cuando se acaba un color | `vozSeAcabo`, `vozSeAcabaronTodos`, `vozSinColores`, `vozEligeOtro` |
-| Tamaño de las "últimas gotas" | `radioUltimaGota` |
 | Apagar la voz | `vozActiva = false` |
 | Agregar colores o cambiar sus nombres | la lista `colores` |
 
@@ -129,6 +135,8 @@ En Android puedes **fijar la pantalla** (en Ajustes busca "Fijar app" o "Fijar p
 
 **Sus colores:** junto a la imagen pon un archivo de texto con el mismo nombre (por ejemplo `gato feliz.txt` al lado de `gato feliz.png`) con hasta 5 colores separados por comas: `Naranja, Rosado, Verde, Celeste, Amarillo`. Los nombres posibles son los de la lista `colores` de `lib/config.dart` (Rojo, Naranja, Amarillo, Verde, Celeste, Azul, Morado, Rosado, Marrón, Gris y Negro). Sin archivo de texto, el dibujo usa `paletaPorDefecto`.
 
+**En el Modo 2:** el personaje de tus imágenes se busca solo: es lo que no toca los bordes de la imagen, menos los detalles que quedan adentro de una zona más grande (los ojos, las manchas, una ventana), que se pintan con los otros colores. Funciona mejor con un solo personaje por imagen: si hay varias cosas sueltas (un gato y un sol), cuentan como un solo personaje.
+
 Consejos: figuras cerradas (sin huecos en las líneas), líneas gruesas y pocas zonas pequeñas. Las zonas muy chiquitas no se pintan. Para probar en tu computadora antes de subir: `pip install opencv-python-headless numpy` y `python3 tools/convertir_imagenes.py` (crea los archivos `foto_*.json` y `foto_*.png` en `assets/drawings/`; no hace falta subirlos, GitHub los vuelve a crear).
 
 Hay dos formas. Cada dibujo es un archivo de texto (JSON).
@@ -136,7 +144,7 @@ Hay dos formas. Cada dibujo es un archivo de texto (JSON).
 ### Forma 1 — desde el celular (uno por uno, sin recompilar)
 
 1. Copia el texto del dibujo en el celular.
-2. Abre la app y mantén presionado el engranaje del menú.
+2. Abre la app y toca el engranaje del menú.
 3. Toca **Pegar** y luego **Guardar**. El dibujo aparece al final del menú.
 
 Los dibujos agregados quedan guardados en el celular y se pueden borrar desde la misma pantalla. Si guardas uno con el mismo `id` que otro que ya agregaste, lo reemplaza.
@@ -164,7 +172,8 @@ El nombre dentro de `indice.json` debe ser exactamente el del archivo, y cada di
     {"path": "M ... Z", "relleno": "#000000"},
     {"path": "M 415 545 C 455 625 545 625 585 545", "grosor": 12}
   ],
-  "colores": ["Amarillo", "Naranja", "Celeste", "Rojo", "Rosado"]
+  "colores": ["Amarillo", "Naranja", "Celeste", "Rojo", "Rosado"],
+  "personaje": {"nombre": "el sol", "partes": ["cara", "rayo1", "rayo2"]}
 }
 ```
 
@@ -174,6 +183,7 @@ El nombre dentro de `indice.json` debe ser exactamente el del archivo, y cada di
 - Cada región debe tener un `id` distinto: con él se guarda lo pintado.
 - Un dibujo agregado no puede usar el mismo `id` que uno de los que trae la app.
 - `colores` es opcional: la paleta del dibujo (hasta 5 nombres de la lista `colores` de `lib/config.dart`). Si el `id` del dibujo está en `paletasDibujos` de `lib/config.dart`, manda lo de `config.dart`.
+- `personaje` es opcional (para el Modo 2): cómo lo nombra la voz y los `id` de sus zonas, que se pintan todas de un solo color. También vale solo la lista: `"personaje": ["cara", "rayo1"]`. Si el `id` del dibujo está en `personajes` de `lib/config.dart`, manda lo de `config.dart`; si no hay ninguno, se busca solo (lo que no toca los bordes, menos los detalles de adentro).
 
 ## Dónde cambiar cosas
 
@@ -187,14 +197,17 @@ El nombre dentro de `indice.json` debe ser exactamente el del archivo, y cada di
 | Voz de los colores | `lib/servicios/voz.dart` |
 | Voces grabadas (opcional) | `assets/voces/` (ver `LEEME.txt` ahí) |
 | Celebración al terminar un dibujo | `lib/widgets/celebracion.dart` |
-| Paleta de cada dibujo y el límite del 70% | `lib/models/paleta_dibujo.dart` y `lib/widgets/paleta.dart` |
+| Los dos modos de pintar (qué se puede pintar y cuándo habla la voz) | `lib/pantallas/pantalla_pintar.dart` |
+| El modo elegido (se guarda en el celular) | `lib/models/modo_pintado.dart` |
+| El personaje de cada dibujo (Modo 2) | `personajes` en `lib/config.dart` y `lib/models/personaje_dibujo.dart` |
+| Paleta de cada dibujo y lo que recuerda | `lib/models/paleta_dibujo.dart` y `lib/widgets/paleta.dart` |
 | Cómo se mide cuánto pinta cada color | `medirColores` en `lib/models/pintura.dart` |
 | Convertir imágenes en dibujos | `tools/convertir_imagenes.py` (carpeta `mis_dibujos/`) |
 | Ícono de la app | `tools/generar_icono.py` (carpeta `icono/`) |
 | Sonidos (gotas, pincel y fiesta) | `lib/servicios/sonidos.dart` y `assets/sonidos/` (se crean con `tools/generar_sonidos.py`, necesita `pip install numpy`) |
 | Presentación al abrir | `lib/pantallas/pantalla_presentacion.dart` |
 | Pantalla de pintar (botones, posición de la paleta) | `lib/pantallas/pantalla_pintar.dart` |
-| Zona de papás | `lib/pantallas/pantalla_padres.dart` |
+| Ajustes (modo de pintar y agregar dibujos) | `lib/pantallas/pantalla_padres.dart` |
 | Formato y lectura de dibujos | `lib/models/dibujo.dart` |
 | De dónde se cargan los dibujos | `lib/data/repositorio.dart` |
 | Los 34 dibujos de fábrica | `assets/drawings/*.json` (se generan con `tools/generar_dibujos.py`) |

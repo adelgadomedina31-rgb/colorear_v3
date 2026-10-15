@@ -8,7 +8,7 @@ import '../models/pintura.dart';
 
 /// De dónde salen los dibujos:
 ///  - los que vienen con la app (carpeta assets/drawings, listados en indice.json)
-///  - los que se agregan desde la "Zona de papás" (se guardan en el celular)
+///  - los que se agregan desde los Ajustes (se guardan en el celular)
 class Repositorio {
   Repositorio._();
 
