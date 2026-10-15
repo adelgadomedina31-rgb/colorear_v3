@@ -39,7 +39,7 @@ class AjustesApp {
   static const bool mostrarPresentacion = true;
 
   /// Lo que se ve en grande en la presentación (dos líneas).
-  static const String presentacionLinea1 = 'PINTEMOS';
+  static const String presentacionLinea1 = 'JUGUEMOS';
   static const String presentacionLinea2 = 'ARLETH';
 
   // ----------------------------------------------------------------- menú

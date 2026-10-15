@@ -74,8 +74,8 @@ class AjustesColores {
 
   /// El cartel y la voz de la celebración.
   static const String celebracionLinea1 = '¡MUY BIEN!';
-  static const String celebracionLinea2 = 'CONOCES LOS COLORES';
-  static const String vozCelebracion = '¡Muy bien! ¡Conoces los colores!';
+  static const String celebracionLinea2 = 'ARLETH';
+  static const String vozCelebracion = '¡Muy bien! ¡Arleth!';
 
   // --------------------------------------------------------------- tiempos
 
