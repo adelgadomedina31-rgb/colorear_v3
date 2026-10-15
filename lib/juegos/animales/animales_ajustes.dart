@@ -51,7 +51,7 @@ class AjustesAnimales {
     Animal('oveja', 'la oveja', '🐑', 'beee beee'),
     Animal('gallo', 'el gallo', '🐓', 'kikirikí'),
     Animal('rana', 'la rana', '🐸', 'croac croac'),
-    Animal('buho', 'el búho', '🦉', 'uuu uuu'),
+    ///Animal('buho', 'el búho', '🦉', 'uuu uuu'),
   ];
 
   // ------------------------------------------------------------ dificultad
