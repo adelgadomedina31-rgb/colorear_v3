@@ -55,7 +55,7 @@ class AjustesPintar {
   static const double escalaMancha = 1.2;
 
   /// Límites para el tamaño (radio) de cada mancha.
-  static const double radioMinimo = 80;
+  static const double radioMinimo = 100;
   static const double radioMaximo = 310;
 
   /// Cuánto tarda la pintura en "derramarse" hasta su tamaño final
@@ -109,14 +109,14 @@ class AjustesPintar {
 
   /// Modo 1: cuando un mismo color cubre esta parte del dibujo (0.50 = la
   /// mitad), la voz recomienda usar otro. Se dice una vez por color.
-  static const double parteParaRecomendar = 0.50;
+  static const double parteParaRecomendar = 0.30;
   static const String vozUsaOtroColor =
-      '¡Usa otro color, para que se vea más bonito!';
+      '¡Arleth elije otro color, para que se vea más bonito!';
 
   /// Modo 1: true = al recomendar otro color, el color se suelta y ella
   /// elige el siguiente (puede volver a elegir el mismo y seguir pintando).
   /// false = solo lo dice y el color sigue elegido.
-  static const bool soltarColorAlRecomendar = true;
+  static const bool soltarColorAlRecomendar = false;
 
   /// Modo 2: el personaje se da por terminado cuando esta parte de él está
   /// pintada (0.97 = el 97%). Entonces la voz pide otro color y el color se
